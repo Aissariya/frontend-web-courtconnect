@@ -1,25 +1,25 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import AuthLayout from '../components/layout/AuthLayout';
-import DashboardLayout from '../components/layout/DashboardLayout';
+import { BrowserRouter, Routes, Route, Navigate, Outlet} from 'react-router-dom';
+import AuthLayout from '../components/layout/AuthLayout/AuthLayout';
+import DashboardLayout from '../components/layout/DashboardLayout/DashboardLayout';
 import PrivateRoute from './PrivateRoute';
 
 // นำเข้าหน้า Auth
-import Login from '../pages/auth/Login';
-import Register from '../pages/auth/Register';
-import ForgotPassword from '../pages/auth/ForgotPassword';
+import Login from '../pages/auth/LoginPage';
+import Register from '../pages/auth/RegisterPage';
+import ForgotPassword from '../pages/auth/ForgotPasswordPage';
 
 // นำเข้าหน้าหลังล็อกอิน
-import Dashboard from '../pages/dashboard/Dashboard';
-import FieldManagement from '../pages/field/FieldManagement';
-import Profile from '../pages/dashboard/Profile';
-import RefundRequest from '../pages/refund/RefundRequest';
+import Dashboard from '../pages/dashboard/DashboardPage';
+import FieldManagement from '../pages/field/FieldManagementPage';
+import Profile from '../pages/profile/ProfilePage';
+import RefundRequest from '../pages/refund/RefundRequestPage';
 
 const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
         {/* Redirect ไปหน้า login เมื่อเข้า path / */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
         {/* หน้าที่ไม่ต้องล็อกอิน */}
         <Route element={<AuthLayout />}>
