@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet} from 'react-router-dom'
 import AuthLayout from '../components/layout/AuthLayout/AuthLayout';
 import DashboardLayout from '../components/layout/DashboardLayout/DashboardLayout';
 import PrivateRoute from './PrivateRoute';
-
+import React from 'react';
 // นำเข้าหน้า Auth
 import Login from '../pages/auth/LoginPage';
 import Register from '../pages/auth/RegisterPage';
