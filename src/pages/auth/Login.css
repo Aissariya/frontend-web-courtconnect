@@ -22,7 +22,7 @@
   }
   
   .input {
-    width: 100%;
+    width: 60%;
     padding: 12px;
     margin-bottom: 16px;
     border-radius: 8px;
@@ -37,7 +37,7 @@
   }
   
   .sign-in-button {
-    width: 100%;
+    width: 50%;
     padding: 12px;
     background-color: #48bb78;
     color: black;

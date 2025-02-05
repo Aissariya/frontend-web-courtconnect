@@ -1,7 +1,7 @@
 import React from "react";
 import './Login.css';  // Assuming the CSS is in the same directory
 import logo from './images/logo.png';
-import backgroundimage from './images/field.jpg';
+import backgroundimage from './images/newbg3.png';
 
 const Login = () => {
   return (
@@ -36,7 +36,7 @@ const Login = () => {
         <img
           src={backgroundimage}
           alt="bg"
-          className="backgroundimage"
+          className="background-image"
         />
          {/*
         <div className="overlay">
