@@ -11,9 +11,11 @@
     color: white;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     padding: 24px;
+    height: 100vh;
+
   }
   
   .logo {
@@ -23,39 +25,59 @@
   
   .input {
     width: 60%;
-    padding: 12px;
-    margin-bottom: 16px;
+    padding: 15px;
+    margin-bottom: 18px;
+    margin-top: -90px;
     border-radius: 8px;
     background-color: #1a1a1a;
     color: white;
     border: none;
     outline: none;
+    
   }
-  
-  .input:focus {
+
+  .input2 {
+
+    width: 60%;
+    padding: 15px;
+    margin-bottom: 30px;
+    margin-top: 8px;
+    border-radius: 8px;
+    background-color: #1a1a1a;
+    color: white;
+    border: none;
+    outline: none;
+
+  }
+
+
+
+  .input,.input2:focus {
     outline: none;
   }
   
   .sign-in-button {
-    width: 50%;
+    width: 60%;
     padding: 12px;
-    background-color: #48bb78;
+    background-color: #a2f193;
     color: black;
     font-weight: bold;
     border-radius: 8px;
     border: none;
     cursor: pointer;
+
+    
   }
   
   .forgot-password,
   .create-account {
-    margin-top: 16px;
-    color: #a1a1a1;
+    margin-top: 20px;
+    color: #000000;
     cursor: pointer;
   }
   
   .create-account-link {
-    color: #48bb78;
+    color: #a2f193;
     font-weight: bold;
   }
   
@@ -82,7 +104,7 @@
     justify-content: center;
     align-items: center;
   }
-  */}
+ 
   
   .title {
     color: white;
@@ -90,3 +112,4 @@
     font-weight: bold;
     letter-spacing: 2px;
   }
+*/}
