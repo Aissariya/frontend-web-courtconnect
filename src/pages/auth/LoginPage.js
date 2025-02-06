@@ -17,7 +17,7 @@ const Login = () => {
         <input
           type="password"
           placeholder="Enter your password"
-          className="input"
+          className="input2"
         />
         <button className="sign-in-button">
           Sign In
