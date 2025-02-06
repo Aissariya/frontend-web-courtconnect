@@ -1,0 +1,110 @@
+.average-bookings-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .chart-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+  }
+  
+  .time-selector {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background-color: white;
+    color: #374151;
+    cursor: pointer;
+    outline: none;
+  }
+  
+  .time-selector:hover {
+    border-color: #d1d5db;
+  }
+  
+  .time-selector:focus {
+    border-color: #3b82f6;
+    ring: 2px;
+    ring-color: #93c5fd;
+  }
+  
+  .chart-content {
+    padding: 1.5rem;
+  }
+  
+  .chart-description {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 1rem;
+  }
+  
+  .bookings-chart {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  
+  .chart-grid path {
+    stroke: #f3f4f6;
+  }
+  
+  .x-axis text,
+  .y-axis text {
+    font-size: 0.75rem;
+    fill: #6b7280;
+  }
+  
+  .booking-bars {
+    fill: #818cf8;
+  }
+  
+  .custom-tooltip {
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  .tooltip-time {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+  }
+  
+  .tooltip-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+  }
+  
+  /* Hover effects */
+  .booking-bars:hover {
+    fill: #6366f1;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 640px) {
+    .chart-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    
+    .time-selector {
+      width: 100%;
+    }
+    
+    .chart-content {
+      padding: 1rem;
+    }
+  }

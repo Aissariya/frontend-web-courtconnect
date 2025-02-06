@@ -1,0 +1,32 @@
+.pie-chart-wrapper {
+  width: 100%;
+  height: 400px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+/* ปรับขนาดฟอนต์ของ percentage labels */
+.percentage-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ถ้าต้องการให้ chart อยู่ตรงกลางพอดี */
+.pie-chart-wrapper .recharts-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ปรับ responsive behavior */
+@media (max-width: 768px) {
+  .pie-chart-wrapper {
+    height: 300px; /* ลดขนาดบน mobile */
+  }
+  
+  .percentage-label {
+    font-size: 12px;
+  }
+}
