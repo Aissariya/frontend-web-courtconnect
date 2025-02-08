@@ -5,6 +5,7 @@ import RevenuePieChart from '../../components/common/Card/RevenuePieChart';
 import AverageBookingsChart from '../../components/common/Card/AverageBookings';
 import BookingHistoryTable from '../../components/common/Card/BookingHistoryTable';
 import './Dashboard.css';
+import { Calendar, SlidersHorizontal } from 'lucide-react';
 
 const Dashboard = () => {
   const metrics = [
@@ -16,6 +17,25 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
+      {/* Filter Bar */}
+      <div className="filter-bar">
+        <div className="date-group">
+          <button className="date-button">
+            <Calendar size={18} />
+            <span>December 2024</span>
+          </button>
+          <select className="period-select">
+            <option>Monthly</option>
+            <option>Weekly</option>
+            <option>Daily</option>
+          </select>
+        </div>
+
+        <button className="filter-button">
+          <SlidersHorizontal size={18} />
+          <span>Filter</span>
+        </button>
+      </div>
       {/* Metrics Grid */}
       <div className="metrics-grid">
         {metrics.map((metric, index) => (
