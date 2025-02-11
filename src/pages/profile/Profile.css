@@ -1,0 +1,168 @@
+.profile-container {
+    padding: 24px;
+    background-color: white;
+    border-radius: 8px;
+  }
+  
+  /* Navigation */
+  .navigation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    padding: 16px;
+    background-color: white;
+    border-radius: 8px;
+  }
+  
+  .logo {
+    font-weight: bold;
+    font-size: 20px;
+  }
+  
+  .nav-items {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .nav-item {
+    cursor: pointer;
+  }
+  
+  .nav-item.active {
+    background-color: #86efac;
+    padding: 8px 16px;
+    border-radius: 8px;
+  }
+  
+  .profile-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #e5e7eb;
+  }
+  
+  /* Profile Section */
+  .profile-section {
+    margin-bottom: 16px;
+  }
+  
+  .profile-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  
+  .profile-icon-small {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #d1d5db;
+  }
+  
+  .profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  
+  .profile-card {
+    background-color: white;
+    padding: 32px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Profile Picture Card */
+  .profile-picture {
+    width: 128px;
+    height: 128px;
+    border-radius: 50%;
+    background-color: #e5e7eb;
+    margin: 0 auto 16px;
+  }
+  
+  .profile-name {
+    font-size: 18px;
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  
+  .button-group {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+  }
+  
+  .btn-primary {
+    padding: 8px 16px;
+    background-color: #86efac;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .btn-secondary {
+    padding: 8px 16px;
+    background-color: white;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  
+  /* Personal Information Card */
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  
+  .card-header h2 {
+    font-size: 18px;
+    font-weight: 500;
+  }
+  
+  .edit-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: #4b5563;
+    cursor: pointer;
+  }
+  
+  .edit-icon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .personal-info {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  
+  .info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .info-label {
+    color: #6b7280;
+  }
+  
+  .info-value {
+    font-weight: 400;
+  }
