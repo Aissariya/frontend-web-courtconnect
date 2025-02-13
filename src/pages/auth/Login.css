@@ -1,115 +1,131 @@
-/* General container for the login page */
-.login-container {
-    display: flex;
-    height: 100vh;
-  }
-  
-  /* Sidebar (Left) */
-  .sidebar {
-    width: 33.33%;
-    background-color: white;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    padding: 24px;
-    height: 100vh;
+/* Container หลักของ Login */
+.login-page-container {
+  display: flex;
+  height: 100vh;
+}
 
-  }
-  
-  .logo {
-    width: 260px;
-    margin-bottom: 150px;
-  }
-  
-  .input {
-    width: 60%;
-    padding: 15px;
-    margin-bottom: 18px;
-    margin-top: -90px;
-    border-radius: 8px;
-    background-color: #1a1a1a;
-    color: white;
-    border: none;
-    outline: none;
-    
-  }
-
-  .input2 {
-
-    width: 60%;
-    padding: 15px;
-    margin-bottom: 30px;
-    margin-top: 8px;
-    border-radius: 8px;
-    background-color: #1a1a1a;
-    color: white;
-    border: none;
-    outline: none;
-
-  }
+/* Sidebar (Left) */
+.login-sidebar {
+  width: 33.33%;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 24px;
+  height: 100vh;
+}
 
 
 
-  .input,.input2:focus {
-    outline: none;
-  }
-  
-  .sign-in-button {
-    width: 60%;
-    padding: 12px;
-    background-color: #a2f193;
-    color: black;
-    font-weight: bold;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
+/* โลโก้ */
+.login-logo {
+  width: 270px;
+  margin-top: 10px;
+  margin-bottom: 140px;
+}
 
-    
-  }
-  
-  .forgot-password,
-  .create-account {
-    margin-top: 20px;
-    color: #000000;
-    cursor: pointer;
-  }
-  
-  .create-account-link {
-    color: #a2f193;
-    font-weight: bold;
-  }
-  
-  /* Main Section (Right) */
-  .main-section {
-    width: 66.67%;
-    position: relative;
-  }
-  
-  .background-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+/* Input Fields */
+.login-input-email {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  margin-top: -100px;
+  margin-bottom: 100px;
+}
 
-  {/*
-  .overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
+
+.login-input-password {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  margin-top: -80px;
+  margin-bottom: 100px;
+}
+
+
+
+.login-icon {
+  position: absolute;
+  left: 10px;
+  color: white;
+}
+
+.login-input {
+  width: 120%;
+  padding: 13px 40px;
+  border-radius: 8px;
+  font-size: 15px;
+  background-color: #1a1a1a;
+  color: white;
+  border: none;
+  outline: none;
+}
+
+/* Error message styles */
+.login-error-text {
+  color: red;
+  font-size: 12px;
+  margin-top: -90px;
+  margin-bottom: 100px;
+  text-align: left;
+  width: 60%;
+}
+
+/* Toggle Password Visibility */
+.login-toggle-password {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+  color: white;
+}
+
+/* Sign In Button */
+.login-sign-in-button {
+  width: 100%;
+  padding: 14px;
+  background-color: #a2f193;
+  color: rgb(12, 103, 50);
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  position: relative;
+  top: -60px;
  
-  
-  .title {
-    color: white;
-    font-size: 48px;
-    font-weight: bold;
-    letter-spacing: 2px;
-  }
-*/}
+}
+
+/* ปิดปุ่มเมื่อข้อมูลไม่ครบ */
+.login-sign-in-button:disabled {
+  background-color: grey;
+  cursor: not-allowed;
+}
+
+.login-forgot-password,
+.login-create-account {
+  margin-top: -10px;
+  margin-bottom: 20px;
+  color: #000000;
+  cursor: pointer;
+}
+
+.login-create-account-link {
+  color: #a2f193;
+  font-weight: bold;
+}
+
+/* Main Section (Right) */
+.login-main-section {
+  width: 66.67%;
+  position: relative;
+}
+
+.login-background-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
