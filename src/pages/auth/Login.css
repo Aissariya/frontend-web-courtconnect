@@ -130,6 +130,7 @@
   object-fit: cover;
 }
 
-body {
-  overflow: hidden; /* ป้องกันการเลื่อนหน้าเว็บ */
+.login-page-container {
+  overflow: hidden; /* ปิดการเลื่อนแค่หน้า Login */
+  height: 100vh;
 }
