@@ -1,11 +1,15 @@
 import React, { useState } from "react";
+import { auth, db } from "../../firebaseConfig";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 import "./RegisterPage.css";
-import logo from "./images/logo.png"; 
+import logo from "./images/logo.png";
 import { FaUser, FaLock, FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa";
-{/*import { UserIcon, LockClosedIcon } from "@heroicons/react/outline";*/}
-
+import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 
 const Register = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -16,13 +20,14 @@ const Register = () => {
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const validateField = (name, value) => {
     let error = "";
     const emailRegex = /^[a-zA-Z0-9@.]+$/;
     const passwordRegex = /^[a-zA-Z0-9!@#$%^&*()_+=-]+$/;
     const nameRegex = /^[A-Za-z\u0E00-\u0E7F]+$/;
-    
+
     switch (name) {
       case "email":
         if (!emailRegex.test(value)) {
@@ -58,7 +63,7 @@ const Register = () => {
       default:
         break;
     }
-    
+
     setErrors((prevErrors) => ({ ...prevErrors, [name]: error }));
   };
 
@@ -69,19 +74,60 @@ const Register = () => {
   };
 
   const isFormValid = Object.values(errors).every((error) => error === "") &&
-                       Object.values(formData).every((field) => field.trim() !== "");
+    Object.values(formData).every((field) => field.trim() !== "");
 
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isFormValid) {
-      console.log("Form submitted successfully", formData);
+    if (!isFormValid) return;
+
+    setLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredential.user;
+
+      await setDoc(doc(db, "users", user.uid), {
+        name: formData.name,
+        surname: formData.surname,
+        email: formData.email,
+        createdAt: new Date(),
+      });
+
+      Swal.fire({
+        icon: "success",
+        title: "Registration Successful!",
+        text: "You have successfully signed up.",
+        confirmButtonText: "OK",
+      }).then(() => {
+        // ไปที่หน้า Login หลังจากสมัครเสร็จ
+        window.location.href = "/login"; // ✅ หรือใช้ useNavigate() ถ้าใช้ React Router
+      });
+
+      setFormData({ email: "", password: "", confirmPassword: "", name: "", surname: "" });
+    } catch (error) {
+      console.error("Error occurred:", error);
+
+      if (error.code === "auth/email-already-in-use") {
+        Swal.fire({
+          icon: "error",
+          title: "Email Already in Use",
+          text: "This email is already registered. Please use a different email or login.",
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Registration Failed",
+          text: error.message,
+        });
+      }
     }
+    setLoading(false);
   };
 
   return (
     <div className="register-container">
       <div className="register-box">
-      <h1 className="register-title" style={{ fontSize: "2rem" }}>Sign Up</h1>
+        <h1 className="register-title" style={{ fontSize: "2rem" }}>Sign Up</h1>
         <form className="register-form" onSubmit={handleSubmit}>
           {/* Email */}
           <div className="input-group">
@@ -106,6 +152,7 @@ const Register = () => {
               placeholder="Password:"
               value={formData.password}
               onChange={handleChange}
+              onCopy={(e) => e.preventDefault()} // ป้องกันปัญหาคัดลอกโค้ด
               required
             />
             <span className="toggle-password" onClick={() => setShowPassword(!showPassword)}>
@@ -160,15 +207,18 @@ const Register = () => {
           {errors.surname && <p className="error-text">{errors.surname}</p>}
 
           {/* Register Button */}
-          <button type="submit" className="register-button" disabled={!isFormValid}>
-            Sign up as an owner
+          <button type="submit" className="register-button" disabled={!isFormValid || loading}>
+            {loading ? "Registering..." : "Sign up as an owner"}
           </button>
         </form>
 
-        {/* Already have an account */}
         <p className="signin-text">
-          Already had an account? <span className="signin-link">Sign in</span>
+          Already had an account?{" "}
+          <span className="signin-link" onClick={() => navigate("/login")}>
+            Sign in
+          </span>
         </p>
+
       </div>
       <img src={logo} alt="CourtConnect Logo" className="register-logo" />
     </div>
