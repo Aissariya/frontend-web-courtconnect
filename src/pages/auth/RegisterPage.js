@@ -135,7 +135,7 @@ const Register = () => {
             <input
               type="email"
               name="email"
-              placeholder="E-mail:"
+              placeholder="E-mail"
               value={formData.email}
               onChange={handleChange}
               required
@@ -149,7 +149,7 @@ const Register = () => {
             <input
               type={showPassword ? "text" : "password"}
               name="password"
-              placeholder="Password:"
+              placeholder="Password"
               value={formData.password}
               onChange={handleChange}
               onCopy={(e) => e.preventDefault()} // ป้องกันปัญหาคัดลอกโค้ด
@@ -167,7 +167,7 @@ const Register = () => {
             <input
               type={showConfirmPassword ? "text" : "password"}
               name="confirmPassword"
-              placeholder="Confirm Password:"
+              placeholder="Confirm Password"
               value={formData.confirmPassword}
               onChange={handleChange}
               required
@@ -184,7 +184,7 @@ const Register = () => {
             <input
               type="text"
               name="name"
-              placeholder="Name:"
+              placeholder="Name"
               value={formData.name}
               onChange={handleChange}
               required
@@ -198,7 +198,7 @@ const Register = () => {
             <input
               type="text"
               name="surname"
-              placeholder="Surname:"
+              placeholder="Surname"
               value={formData.surname}
               onChange={handleChange}
               required
