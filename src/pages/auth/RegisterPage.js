@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { auth, db } from "../../firebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, collection, getDocs, query, where, orderBy, limit } from "firebase/firestore";
 import "./RegisterPage.css";
 import logo from "./images/logo.png";
 import { FaUser, FaLock, FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa";
@@ -76,6 +76,32 @@ const Register = () => {
   const isFormValid = Object.values(errors).every((error) => error === "") &&
     Object.values(formData).every((field) => field.trim() !== "");
 
+  // Function to generate next user ID
+  const generateNextUserId = async () => {
+    try {
+      // Query to get the latest user_id
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, orderBy("user_id", "desc"), limit(1));
+      const querySnapshot = await getDocs(q);
+      
+      let nextId = "USR0001"; // Default first ID
+      
+      if (!querySnapshot.empty) {
+        // Get the latest user_id
+        const latestUser = querySnapshot.docs[0].data();
+        const latestId = latestUser.user_id;
+        
+        // Extract the number part and increment
+        const num = parseInt(latestId.substring(3)) + 1;
+        nextId = `USR${num.toString().padStart(4, '0')}`;
+      }
+      
+      return nextId;
+    } catch (error) {
+      console.error("Error generating user ID:", error);
+      throw error;
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -83,10 +109,14 @@ const Register = () => {
 
     setLoading(true);
     try {
+      // Generate next user ID
+      const nextUserId = await generateNextUserId();
+      
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
       await setDoc(doc(db, "users", user.uid), {
+        user_id: nextUserId,
         name: formData.name,
         surname: formData.surname,
         email: formData.email,
@@ -99,8 +129,7 @@ const Register = () => {
         text: "You have successfully signed up.",
         confirmButtonText: "OK",
       }).then(() => {
-        // ไปที่หน้า Login หลังจากสมัครเสร็จ
-        window.location.href = "/login"; // ✅ หรือใช้ useNavigate() ถ้าใช้ React Router
+        window.location.href = "/login";
       });
 
       setFormData({ email: "", password: "", confirmPassword: "", name: "", surname: "" });
@@ -152,7 +181,7 @@ const Register = () => {
               placeholder="Password:"
               value={formData.password}
               onChange={handleChange}
-              onCopy={(e) => e.preventDefault()} // ป้องกันปัญหาคัดลอกโค้ด
+              onCopy={(e) => e.preventDefault()}
               required
             />
             <span className="toggle-password" onClick={() => setShowPassword(!showPassword)}>
@@ -218,7 +247,6 @@ const Register = () => {
             Sign in
           </span>
         </p>
-
       </div>
       <img src={logo} alt="CourtConnect Logo" className="register-logo" />
     </div>
