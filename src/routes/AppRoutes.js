@@ -19,7 +19,7 @@ const AppRoutes = () => {
     <BrowserRouter>
       <Routes>
         {/* Redirect ไปหน้า login เมื่อเข้า path / */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
 
         {/* หน้าที่ไม่ต้องล็อกอิน */}
         <Route element={<AuthLayout />}>

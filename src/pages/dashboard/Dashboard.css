@@ -238,3 +238,87 @@
   outline: none;
   background-color: #f3f4f6;
 }
+
+/* เพิ่ม CSS นี้ในไฟล์ Dashboard.css */
+
+.date-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.date-button:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.date-picker-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 5px;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  z-index: 10;
+  min-width: 300px;
+}
+
+.date-picker-row {
+  display: flex;
+  gap: 10px;
+}
+
+.month-select,
+.year-select {
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  background-color: white;
+  font-size: 14px;
+}
+
+.month-select {
+  flex: 2;
+}
+
+.year-select {
+  flex: 1;
+}
+
+.date-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Add this to your existing Dashboard.css file */
+
+.filter-button-container {
+  position: relative;
+}
+
+.filter-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #f5f5f5;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.filter-button:hover {
+  background-color: #e0e0e0;
+}
