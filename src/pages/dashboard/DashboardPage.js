@@ -1,122 +1,74 @@
 import React, { useState } from 'react';
-import MetricCard from '../../components/common/Card/MetricCard';
+import './Dashboard.css';
+
+// Custom hooks
+import useAuth from '../../hooks/useAuth';
+import useRevenueData from '../../hooks/useRevenueData';
+
+// Utils
+import { getPreviousMonth } from '../../utils/dateUtils';
+
+// Components
+import DateFilterBar from '../../components/dashboard/DateFilterBar';
+import FilterButton from './FilterButton';
+import MetricsGrid from '../../components/dashboard/MetricsGrid';
 import RevenueChart from '../../components/common/Card/RevenueChart';
 import RevenuePieChart from '../../components/common/Card/RevenuePieChart';
 import AverageBookingsChart from '../../components/common/Card/AverageBookings';
 import BookingHistoryTable from '../../components/common/Card/BookingHistoryTable';
-import './Dashboard.css';
-import { Calendar, SlidersHorizontal, ChevronDown } from 'lucide-react';
-import FilterButton from './FilterButton';
 
-const Dashboard = () => {
-  const [filterPeriod, setFilterPeriod] = useState('daily');
+const DashboardPage = () => {
+  // State สำหรับ filter หลักของหน้า dashboard (ใช้กับ metrics)
+  // เริ่มต้นด้วย monthly ตามที่ต้องการ
+  const [dashboardFilterPeriod, setDashboardFilterPeriod] = useState('monthly');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth()); // 0-11
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [showDatePicker, setShowDatePicker] = useState(false);
   
-  const metrics = [
-    { title: 'Revenue', value: '฿55,360.00', change: 26 },
-    { title: 'Total Bookings', value: '374', change: 35 },
-    { title: 'Total Booking Hours', value: '1,870 hr.', change: 50 },
-    { title: 'Total new customers', value: '20', change: -55 },
-  ];
+  // State สำหรับ RevenueChart filter แยกต่างหาก
+  const [revenueChartFilterPeriod, setRevenueChartFilterPeriod] = useState('daily');
+  
+  // ใช้ custom hooks
+  const { user } = useAuth();
+  const { metrics, loading, error } = useRevenueData(user, selectedMonth, selectedYear, dashboardFilterPeriod);
 
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
-  // สร้างปีให้เลือกย้อนหลัง 5 ปี และไปข้างหน้า 1 ปี
-  const currentYear = new Date().getFullYear();
-  const availableYears = [];
-  for (let year = currentYear - 5; year <= currentYear + 1; year++) {
-    availableYears.push(year);
-  }
-
-  const handleFilterChange = (event) => {
-    setFilterPeriod(event.target.value.toLowerCase());
+  // Handlers สำหรับ filter หลักของหน้า dashboard
+  const handleMonthChange = (month) => {
+    setSelectedMonth(month);
   };
 
-  const handleMonthChange = (event) => {
-    setSelectedMonth(parseInt(event.target.value));
+  const handleYearChange = (year) => {
+    setSelectedYear(year);
   };
 
-  const handleYearChange = (event) => {
-    setSelectedYear(parseInt(event.target.value));
+  const handleDashboardFilterChange = (period) => {
+    setDashboardFilterPeriod(period);
   };
-
-  const toggleDatePicker = () => {
-    setShowDatePicker(!showDatePicker);
+  
+  // Handler สำหรับ RevenueChart filter
+  const handleRevenueChartFilterChange = (event) => {
+    setRevenueChartFilterPeriod(event.target.value.toLowerCase());
   };
 
   // คำนวณเดือนก่อนหน้า
-  const getPreviousMonth = () => {
-    if (selectedMonth === 0) {
-      return { month: 11, year: selectedYear - 1 };
-    } else {
-      return { month: selectedMonth - 1, year: selectedYear };
-    }
-  };
-
-  const previousMonth = getPreviousMonth();
+  const previousMonth = getPreviousMonth(selectedMonth, selectedYear);
 
   return (
     <div className="dashboard-container">
-      {/* Filter Bar */}
+      {/* Filter Bar หลักของหน้า dashboard */}
       <div className="filter-bar">
-        <div className="date-group">
-          <button className="date-button" onClick={toggleDatePicker}>
-            <Calendar size={18} />
-            <span>{monthNames[selectedMonth]} {selectedYear}</span>
-            <ChevronDown size={16} />
-          </button>
-          
-          {showDatePicker && (
-            <div className="date-picker-dropdown">
-              <div className="date-picker-row">
-                <select 
-                  className="month-select" 
-                  value={selectedMonth}
-                  onChange={handleMonthChange}
-                >
-                  {monthNames.map((month, index) => (
-                    <option key={month} value={index}>{month}</option>
-                  ))}
-                </select>
-                
-                <select 
-                  className="year-select" 
-                  value={selectedYear}
-                  onChange={handleYearChange}
-                >
-                  {availableYears.map(year => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
-          
-          <select className="period-select" onChange={handleFilterChange}>
-            <option value="monthly">Monthly</option>
-            <option value="yearly">Yearly</option>
-          </select>
-        </div>
-
+        <DateFilterBar 
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+          filterPeriod={dashboardFilterPeriod}
+          onMonthChange={handleMonthChange}
+          onYearChange={handleYearChange}
+          onFilterChange={handleDashboardFilterChange}
+        />
         <FilterButton />
       </div>
 
-      {/* Metrics Grid */}
-      <div className="metrics-grid">
-        {metrics.map((metric, index) => (
-          <MetricCard
-            key={index}
-            title={metric.title}
-            value={metric.value}
-            change={metric.change}
-          />
-        ))}
-      </div>
+      {/* Metrics Grid - ใช้ dashboard filter */}
+      <MetricsGrid metrics={metrics} loading={loading} />
 
       {/* Charts Section */}
       <div className="charts-section">
@@ -125,10 +77,11 @@ const Dashboard = () => {
           <div className="chart-card revenue-overview">
             <div className="chart-header">
               <h2 className="chart-title">Revenue Overview</h2>
+              {/* Select สำหรับ RevenueChart filter แยกต่างหาก */}
               <select 
                 className="chart-select"
-                value={filterPeriod}
-                onChange={handleFilterChange}
+                value={revenueChartFilterPeriod}
+                onChange={handleRevenueChartFilterChange}
               >
                 <option value="daily">Daily</option>
                 <option value="monthly">Monthly</option>
@@ -136,8 +89,9 @@ const Dashboard = () => {
               </select>
             </div>
             <div className="chart-container">
+              {/* ส่ง revenueChartFilterPeriod ไปให้ RevenueChart */}
               <RevenueChart 
-                filterPeriod={filterPeriod} 
+                filterPeriod={revenueChartFilterPeriod} 
                 selectedMonth={selectedMonth}
                 selectedYear={selectedYear}
                 previousMonth={previousMonth.month}
@@ -213,4 +167,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default DashboardPage;
