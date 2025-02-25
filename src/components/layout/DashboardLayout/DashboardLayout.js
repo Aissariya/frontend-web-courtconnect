@@ -1,10 +1,15 @@
-import React from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Bell, LogOut } from 'lucide-react';
 import './DashboardLayout.css';
+import { getAuth, signOut } from 'firebase/auth';
+import Swal from 'sweetalert2';
 
 const DashboardLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
   
   const isActive = (path) => {
     return location.pathname === path;
@@ -16,6 +21,84 @@ const DashboardLayout = () => {
     { path: '/dashboard/field-management', label: 'Field Management' },
     { path: '/dashboard/profile', label: 'Profile' }
   ];
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const toggleDropdown = () => {
+    setShowDropdown(!showDropdown);
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Show confirmation dialog
+      const result = await Swal.fire({
+        title: 'Logout',
+        text: 'Are you sure you want to log out?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, logout',
+        cancelButtonText: 'Cancel'
+      });
+
+      if (result.isConfirmed) {
+        // Show loading state
+        Swal.fire({
+          title: 'Logging out...',
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
+
+        // Get Firebase auth instance
+        const auth = getAuth();
+        
+        // Sign out from Firebase
+        await signOut(auth);
+        
+        // Clear localStorage data
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('sessionTimestamp');
+        sessionStorage.removeItem('sessionActive');
+        
+        // Show success message
+        Swal.fire({
+          icon: 'success',
+          title: 'Logged Out Successfully',
+          text: 'You have been logged out.',
+          timer: 1500,
+          showConfirmButton: false
+        }).then(() => {
+          // Navigate to login page
+          navigate('/login');
+        });
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      
+      // Show error message
+      Swal.fire({
+        icon: 'error',
+        title: 'Logout Failed',
+        text: 'An error occurred while logging out. Please try again.',
+        confirmButtonColor: '#3085d6'
+      });
+    }
+  };
 
   return (
     <div className="dashboard">
@@ -38,7 +121,17 @@ const DashboardLayout = () => {
               <button className="icon-button">
                 <Bell size={20} />
               </button>
-              <div className="avatar"></div>
+              <div className="avatar-container" ref={dropdownRef}>
+                <div className="avatar" onClick={toggleDropdown}></div>
+                {showDropdown && (
+                  <div className="dropdown-menu">
+                    <button className="logout-button" onClick={handleLogout}>
+                      <LogOut size={16} />
+                      <span>Log Out</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </nav>
