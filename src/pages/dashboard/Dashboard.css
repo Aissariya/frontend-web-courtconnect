@@ -30,7 +30,7 @@
   background: white;
   border-radius: 0.5rem;
   padding: 1.25rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
   position: relative;
   /* Added for proper stacking context */
 }

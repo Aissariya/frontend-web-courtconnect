@@ -1,94 +1,133 @@
 .dashboard {
-    min-height: 100vh;
-    background-color: #f9fafb;
-  }
-  
-  header {
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    right: 16px;
-    background-color: white;
-    z-index: 10;
-    border-radius: 8px;
-  }
-  
-  nav {
-    padding: 0 32px;
-    border-bottom: none;
-    background-color: white;
-    border-radius: 8px;
-  }
-  
-  .nav-container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 64px;
-  }
-  
-  .left-section {
-    display: flex;
-    align-items: center;
-    gap: 48px;
-  }
-  
-  .logo {
-    font-weight: bold;
-    font-size: 18px;
-  }
-  
-  .menu-items {
-    display: flex;
-    align-items: center;
-    margin: 0 auto;
-    gap: 64px;
-   }
-  
-  .menu-link {
-    padding: 8px 16px;
-    border-radius: 9999px;
-    font-size: 14px;
-    color: #4b5563;
-    text-decoration: none;
-  }
-  
-  .menu-link:hover {
-    color: #111827;
-  }
-  
-  .menu-link.active {
-    background-color: #DDFBE0;
-    color: #111827;
-    padding: 12px 24px;
-  }
-  
-  .right-section {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  
-  .icon-button {
-    border: none;
-    background: none;
-    cursor: pointer;
-    color: #4b5563;
-  }
-  
-  .icon-button:hover {
-    color: #111827;
-  }
-  
-  .avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 9999px;
-    background-color: #e5e7eb;
-  }
-  
-  main {
-    padding-top: 96px;
-    padding-left: 24px;
-    padding-right: 24px;
-  }
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+header {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  background-color: white;
+  z-index: 10;
+  border-radius: 8px;
+}
+
+nav {
+  padding: 0 32px;
+  border-bottom: none;
+  background-color: white;
+  border-radius: 8px;
+}
+
+.nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.left-section {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+}
+
+.logo {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.menu-items {
+  display: flex;
+  align-items: center;
+  margin: 0 auto;
+  gap: 64px;
+ }
+
+.menu-link {
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 14px;
+  color: #4b5563;
+  text-decoration: none;
+}
+
+.menu-link:hover {
+  color: #111827;
+}
+
+.menu-link.active {
+  background-color: #DDFBE0;
+  color: #111827;
+  padding: 12px 24px;
+}
+
+.right-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.icon-button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #4b5563;
+}
+
+.icon-button:hover {
+  color: #111827;
+}
+
+/* New avatar container styles */
+.avatar-container {
+  position: relative;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background-color: #e5e7eb;
+  cursor: pointer;
+}
+
+/* Dropdown menu styles */
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  width: 130px;
+  z-index: 20;
+}
+
+.logout-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: #4b5563;
+  transition: all 0.2s;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.logout-button:hover {
+  background-color: #DDFBE0;
+  color: #16a34a; /* สีเขียวเข้มสำหรับข้อความ */
+}
+
+main {
+  padding-top: 96px;
+  padding-left: 24px;
+  padding-right: 24px;
+}

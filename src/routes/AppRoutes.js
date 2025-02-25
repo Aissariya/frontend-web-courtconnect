@@ -1,8 +1,9 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet} from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AuthLayout from '../components/layout/AuthLayout/AuthLayout';
 import DashboardLayout from '../components/layout/DashboardLayout/DashboardLayout';
 import PrivateRoute from './PrivateRoute';
 import React from 'react';
+
 // นำเข้าหน้า Auth
 import Login from '../pages/auth/LoginPage';
 import Register from '../pages/auth/RegisterPage';
@@ -28,17 +29,18 @@ const AppRoutes = () => {
           <Route path="/forgotpassword" element={<ForgotPassword />} />
         </Route>
 
-        {/* หน้าที่ต้องล็อกอิน */}
-        <Route path="/dashboard" element={
-          <PrivateRoute>
-            <DashboardLayout />
-          </PrivateRoute>
-        }>
-          <Route index element={<Dashboard />} />
-          <Route path="field-management" element={<FieldManagement />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="refund-request" element={<RefundRequest />} />
+        {/* หน้าที่ต้องล็อกอิน - ใช้ PrivateRoute */}
+        <Route element={<PrivateRoute />}>
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/field-management" element={<FieldManagement />} />
+            <Route path="/dashboard/profile" element={<Profile />} />
+            <Route path="/dashboard/refund-request" element={<RefundRequest />} />
+          </Route>
         </Route>
+        
+        {/* Fallback route */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );
