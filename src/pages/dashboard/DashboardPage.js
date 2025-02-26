@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
 
 // Custom hooks
@@ -24,12 +24,23 @@ const DashboardPage = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth()); // 0-11
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   
+  // เพิ่ม state สำหรับการกรอง field และ court_type
+  const [selectedFields, setSelectedFields] = useState([]);
+  const [selectedCourtTypes, setSelectedCourtTypes] = useState([]);
+  
   // State สำหรับ RevenueChart filter แยกต่างหาก
   const [revenueChartFilterPeriod, setRevenueChartFilterPeriod] = useState('daily');
+  const [pieChartType, setPieChartType] = useState('field');
   
   // ใช้ custom hooks
   const { user } = useAuth();
   const { metrics, loading, error } = useRevenueData(user, selectedMonth, selectedYear, dashboardFilterPeriod);
+
+  // ใช้ useEffect เพื่อให้ filter หลักมีผลต่อ Revenue Overview filter
+  useEffect(() => {
+    // อัพเดท Revenue chart filter ตาม dashboard filter
+    setRevenueChartFilterPeriod(dashboardFilterPeriod);
+  }, [dashboardFilterPeriod]);
 
   // Handlers สำหรับ filter หลักของหน้า dashboard
   const handleMonthChange = (month) => {
@@ -48,6 +59,12 @@ const DashboardPage = () => {
   const handleRevenueChartFilterChange = (event) => {
     setRevenueChartFilterPeriod(event.target.value.toLowerCase());
   };
+  
+  // Handler สำหรับรับค่า filters จาก FilterButton
+  const handleApplyFilters = (fields, courtTypes) => {
+    setSelectedFields(fields);
+    setSelectedCourtTypes(courtTypes);
+  };
 
   // คำนวณเดือนก่อนหน้า
   const previousMonth = getPreviousMonth(selectedMonth, selectedYear);
@@ -64,7 +81,7 @@ const DashboardPage = () => {
           onYearChange={handleYearChange}
           onFilterChange={handleDashboardFilterChange}
         />
-        <FilterButton />
+        <FilterButton onApplyFilters={handleApplyFilters} />
       </div>
 
       {/* Metrics Grid - ใช้ dashboard filter */}
@@ -96,6 +113,8 @@ const DashboardPage = () => {
                 selectedYear={selectedYear}
                 previousMonth={previousMonth.month}
                 previousYear={previousMonth.year}
+                selectedFields={selectedFields}
+                selectedCourtTypes={selectedCourtTypes}
               />
             </div>
           </div>
@@ -111,6 +130,8 @@ const DashboardPage = () => {
               <AverageBookingsChart 
                 selectedMonth={selectedMonth}
                 selectedYear={selectedYear}
+                selectedFields={selectedFields}
+                selectedCourtTypes={selectedCourtTypes}
               />
             </div>
           </div>
@@ -120,38 +141,24 @@ const DashboardPage = () => {
         <div className="chart-card revenue-proportion">
           <div className="chart-header">
             <h2 className="chart-title">Revenue Proportion</h2>
-            <select className="chart-select">
-              <option>Field</option>
+            <select 
+              className="chart-select"
+              value={pieChartType}
+              onChange={(e) => setPieChartType(e.target.value.toLowerCase())}
+            >
+              <option value="field">Field</option>
+              <option value="court_type">Court Type</option>
             </select>
           </div>
           <div className="pie-chart-container">
             <RevenuePieChart 
+              filterPeriod={dashboardFilterPeriod} // เพิ่ม prop นี้เพื่อส่ง filterPeriod เหมือนกับ chart อื่นๆ
               selectedMonth={selectedMonth}
               selectedYear={selectedYear}
+              selectedFields={selectedFields}
+              selectedCourtTypes={selectedCourtTypes}
+              chartType={pieChartType}
             />
-          </div>
-          <div className="legend-container">
-            <div className="legend-item">
-              <div className="legend-label">
-                <div className="legend-dot legend-dot-alpha"></div>
-                <span>Alpha</span>
-              </div>
-              <span>27,680.00</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-label">
-                <div className="legend-dot legend-dot-beta"></div>
-                <span>Beta</span>
-              </div>
-              <span>16,884.80</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-label">
-                <div className="legend-dot legend-dot-gamma"></div>
-                <span>Gamma</span>
-              </div>
-              <span>10,795.20</span>
-            </div>
           </div>
         </div>
       </div>
@@ -161,6 +168,8 @@ const DashboardPage = () => {
         <BookingHistoryTable 
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
+          selectedFields={selectedFields}
+          selectedCourtTypes={selectedCourtTypes}
         />
       </div>
     </div>
