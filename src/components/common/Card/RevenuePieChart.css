@@ -1,64 +1,81 @@
-.chart-card {
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+/* RevenuePieChart.css - ปรับปรุง */
+
+.revenue-pie-chart {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 0;
 }
 
 .chart-header {
-  margin-bottom: 24px;
-}
-
-.chart-title {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
+  margin-bottom: 20px;
 }
 
-.chart-title h3 {
-  font-size: 16px;
-  font-weight: 500;
-  color: #111827;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.chart-select-container {
+  position: relative;
 }
 
-.field-selector {
-  padding: 6px 12px;
+.chart-select {
+  padding: 6px 30px 6px 12px;
   border: 1px solid #E5E7EB;
   border-radius: 6px;
   font-size: 14px;
-  color: #374151;
+  color: #4B5563;
   background-color: white;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234B5563'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+}
+
+.chart-select:hover {
+  border-color: #9CA3AF;
+}
+
+.chart-select:focus {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.pie-chart-container {
+  position: relative;
+  height: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .pie-container {
-  height: 300px;
-  margin-bottom: 24px;
-}
-
-.percentage-label {
-  font-size: 14px;
-  font-weight: 500;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 280px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
 }
 
 .legend-container {
   display: flex;
   flex-direction: column;
-  padding-top: 16px;
+  margin-top: 10px;
+  gap: 8px;
+  max-width: 100%;
+  border-top: 1px solid #E5E7EB;
+  padding-top: 8px;
 }
 
 .legend-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #E5E7EB;
-}
-
-.legend-item:last-child {
-  border-bottom: none;
+  padding: 8px 0;
 }
 
 .legend-label {
@@ -68,17 +85,80 @@
 }
 
 .legend-dot {
-  width: 8px;
-  height: 8px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .legend-name {
   font-size: 14px;
   color: #111827;
+  font-weight: 500;
 }
 
 .legend-value {
   font-size: 14px;
   font-weight: 500;
+  color: #111827;
+}
+
+.percentage-label {
+  font-size: 14px;
+  font-weight: 600;
+  fill: #FFFFFF;
+  text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.chart-loading,
+.chart-error,
+.no-data-message {
+  height: 220px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #6B7280;
+  font-size: 16px;
+  text-align: center;
+  padding: 20px;
+}
+
+.chart-error {
+  color: #EF4444;
+}
+
+.custom-tooltip {
+  background-color: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tooltip-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  margin: 0 0 4px 0;
+}
+
+.tooltip-value {
+  font-size: 14px;
+  color: #4B5563;
+  margin: 0;
+}
+
+/* Media query สำหรับหน้าจอขนาดเล็ก */
+@media (max-width: 480px) {
+  .revenue-pie-chart {
+    padding: 12px;
+  }
+  
+  .pie-container {
+    height: 180px;
+  }
+  
+  .legend-name, .legend-value, .tooltip-name, .tooltip-value {
+    font-size: 13px;
+  }
 }

@@ -1,93 +1,164 @@
 /* FilterButton.css */
 .filter-button-wrapper {
-    position: relative;
-  }
-  
-  .filter-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background-color: #f5f5f5;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-  
-  .filter-button:hover {
-    background-color: #e0e0e0;
-  }
-  
-  .filter-panel {
-    position: absolute;
-    top: 40px;
-    right: 10;
-    width: 270px;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    padding: 16px;
-    z-index: 100;
-  }
-  
-  .filter-group {
-    margin-bottom: 16px;
-  }
-  
-  .filter-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-  }
-  
-  .filter-label {
-    font-weight: 500;
-    color: #333;
-  }
-  
-  .reset-button {
-    background: none;
-    border: none;
-    color: #4caf50;
-    font-size: 14px;
-    cursor: pointer;
-  }
-  
-  .dropdown-selector {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 12px;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    color: #555;
-  }
-  
-  .filter-actions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 24px;
-  }
-  
-  .reset-all-button {
-    padding: 10px 16px;
-    background-color: #f5f5f5;
-    border: none;
-    border-radius: 6px;
-    color: #333;
-    font-weight: 500;
-    cursor: pointer;
-  }
-  
-  .apply-button {
-    padding: 10px 16px;
-    background-color: #4caf50;
-    border: none;
-    border-radius: 6px;
-    color: white;
-    font-weight: 500;
-    cursor: pointer;
-  }
+  position: relative;
+}
+
+.filter-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #f5f5f5;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.filter-button:hover {
+  background-color: #e0e0e0;
+}
+
+.filter-panel {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  width: 270px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  z-index: 100;
+}
+
+.filter-group {
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.filter-label {
+  font-weight: 500;
+  color: #333;
+}
+
+.reset-button {
+  background: none;
+  border: none;
+  color: #4caf50;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.dropdown-selector {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #555;
+}
+
+/* เพิ่มเติมสำหรับ dropdown options */
+.dropdown-options {
+  position: absolute;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  margin-top: 4px;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.dropdown-option:last-child {
+  border-bottom: none;
+}
+
+.dropdown-option:hover {
+  background-color: #f5f7fa;
+}
+
+.dropdown-option.selected {
+  background-color: #e8f5e9;
+}
+
+.loading-text, .no-data-text {
+  padding: 12px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+/* สำหรับแสดง tags */
+.selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background-color: #e8f5e9;
+  color: #4caf50;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.tag-remove {
+  cursor: pointer;
+  color: #4caf50;
+}
+
+.tag-remove:hover {
+  color: #388e3c;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+.reset-all-button {
+  padding: 10px 16px;
+  background-color: #f5f5f5;
+  border: none;
+  border-radius: 6px;
+  color: #333;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.apply-button {
+  padding: 10px 16px;
+  background-color: #4caf50;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+}
