@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/common/button';
 
 const courts = [
   { name: 'Alpha Court TH', type: 'Football', hours: '13:00 - 23:00', capacity: 10, slots: 'Hourly', status: 'Available' },
@@ -12,17 +12,26 @@ const courts = [
 const FieldManagement = () => {
   const [showForm, setShowForm] = useState(false);
   const [selectedField, setSelectedField] = useState('');
+  const [courtType, setCourtType] = useState('');
+  const [capacity, setCapacity] = useState('');
+  const [availableHours, setAvailableHours] = useState('');
+  
   const handleAddCourtClick = () => setShowForm(true);
   const handleCancel = () => setShowForm(false);
+  
+  const handleSubmit = () => {
+    console.log({ selectedField, courtType, capacity, availableHours });
+    setShowForm(false);
+  };
 
   return (
     <div>
       <div className="bg-gray-100 p-4 flex justify-between">
         <div className="flex space-x-4">
           <a href="/refund-request" className="text-black">Refund Request</a>
-          <a href="#" className="text-black">Dashboard</a>
-          <a href="#" className="text-green-500">Field Management</a>
-          <a href="#" className="text-black">Profile</a>
+          <a href="#" onClick={(e) => e.preventDefault()} className="text-black">Dashboard</a>
+          <a href="#" onClick={(e) => e.preventDefault()} className="text-green-500">Field Management</a>
+          <a href="#" onClick={(e) => e.preventDefault()} className="text-black">Profile</a>
         </div>
         <Button className="bg-green-500 text-white" onClick={handleAddCourtClick}>Add Court</Button>
       </div>
@@ -47,14 +56,14 @@ const FieldManagement = () => {
               </div>
               <div>
                 <h2 className="text-lg font-semibold">Court Information</h2>
-                <input type="text" placeholder="Court Type" className="w-full p-2 border rounded" />
-                <input type="number" placeholder="Capacity (people)" className="w-full p-2 border rounded mt-2" />
-                <input type="text" placeholder="Available Hours" className="w-full p-2 border rounded mt-2" />
+                <input type="text" value={courtType} onChange={(e) => setCourtType(e.target.value)} placeholder="Court Type" className="w-full p-2 border rounded" />
+                <input type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} placeholder="Capacity (people)" className="w-full p-2 border rounded mt-2" />
+                <input type="text" value={availableHours} onChange={(e) => setAvailableHours(e.target.value)} placeholder="Available Hours" className="w-full p-2 border rounded mt-2" />
               </div>
             </div>
             <div className="flex justify-end mt-4 space-x-2">
               <Button className="bg-gray-200" onClick={handleCancel}>Cancel</Button>
-              <Button className="bg-green-500 text-white">Add Court</Button>
+              <Button className="bg-green-500 text-white" onClick={handleSubmit}>Add Court</Button>
             </div>
           </div>
         ) : (
