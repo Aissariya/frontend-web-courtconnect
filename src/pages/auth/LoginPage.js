@@ -129,6 +129,7 @@ const Login = () => {
               className="login-input"
               value={formData.email}
               onChange={handleChange}
+              onKeyDown={(e) => e.key === " " && e.preventDefault()}
               required
             />
           </div>
@@ -143,6 +144,7 @@ const Login = () => {
               className="login-input"
               value={formData.password}
               onChange={handleChange}
+              onKeyDown={(e) => e.key === " " && e.preventDefault()}
               required
             />
             <span className="login-toggle-password" onClick={() => setShowPassword(!showPassword)}>
