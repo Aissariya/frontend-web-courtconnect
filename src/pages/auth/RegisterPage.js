@@ -167,6 +167,7 @@ const Register = () => {
               placeholder="E-mail"
               value={formData.email}
               onChange={handleChange}
+              onKeyDown={(e) => e.key === " " && e.preventDefault()}
               required
             />
           </div>
@@ -182,6 +183,7 @@ const Register = () => {
               value={formData.password}
               onChange={handleChange}
               onCopy={(e) => e.preventDefault()}
+              onKeyDown={(e) => e.key === " " && e.preventDefault()}
               required
             />
             <span className="toggle-password" onClick={() => setShowPassword(!showPassword)}>
@@ -199,6 +201,7 @@ const Register = () => {
               placeholder="Confirm Password"
               value={formData.confirmPassword}
               onChange={handleChange}
+              onKeyDown={(e) => e.key === " " && e.preventDefault()}
               required
             />
             <span className="toggle-password" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
@@ -216,6 +219,7 @@ const Register = () => {
               placeholder="Name"
               value={formData.name}
               onChange={handleChange}
+              onKeyDown={(e) => e.key === " " && e.preventDefault()}
               required
             />
           </div>
@@ -230,6 +234,7 @@ const Register = () => {
               placeholder="Surname"
               value={formData.surname}
               onChange={handleChange}
+              onKeyDown={(e) => e.key === " " && e.preventDefault()}
               required
             />
           </div>
