@@ -1,84 +1,48 @@
-import React, { useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from '../../firebaseConfig';
+import { ChevronDown, ChevronLeft, X } from "lucide-react";
 import "./RefundRequest.css";
 
 const RefundRequest = () => {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [refunds, setRefunds] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedRefund, setSelectedRefund] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
-  const mockData = [
-    {
-      id: 1,
-      name: "Phillip Vetrovs",
-      datetime: "2024-12-31 14:59:41",
-      reason: "Made a mistake in booking",
-      amount: 500.0,
-      status: "Need Action",
-    },
-    {
-      id: 2,
-      name: "Jocelyn Donin",
-      datetime: "2024-12-31 14:59:41",
-      reason: "Change of plans",
-      amount: 280.0,
-      status: "Accepted",
-    },
-    {
-      id: 3,
-      name: "Cooper Gouse",
-      datetime: "2024-12-31 14:59:41",
-      reason: "Personal reasons",
-      amount: 200.0,
-      status: "Rejected",
-    },
-    {
-      id: 4,
-      name: "Dulce Baptista",
-      datetime: "2024-12-31 14:59:41",
-      reason: "Health issues",
-      amount: 550.0,
-      status: "Accepted",
-    },
-    {
-      id: 5,
-      name: "Brandon Saris",
-      datetime: "2024-12-31 14:59:41",
-      reason: "Transportation issues",
-      amount: 390.0,
-      status: "Accepted",
-    },
-    {
-      id: 6,
-      name: "Phillip Vetrovs",
-      datetime: "2024-12-31 14:59:41",
-      reason: "Weather concerns",
-      amount: 120.0,
-      status: "Accepted",
-    },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "Refund"));
+        const data = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        setRefunds(data);
+      } catch (error) {
+        console.error("Error fetching refunds:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const getStatusClass = (status) => {
-    switch (status) {
-      case "Need Action":
-        return "status status-need-action";
-      case "Accepted":
-        return "status status-accepted";
-      case "Rejected":
-        return "status status-rejected";
-      default:
-        return "status";
-    }
+    fetchData();
+  }, []);
+
+  const openModal = (refund) => {
+    setSelectedRefund(refund);
+    setRejectionReason("");
+  };
+
+  const closeModal = () => {
+    setSelectedRefund(null);
+  };
+
+  const formatCurrency = (amount) => {
+    return `฿${amount ? amount.toFixed(2) : "0.00"}`;
   };
 
   return (
     <div className="container">
       <div className="refund-header">
         <div className="refund-title">
-          <div className="icon-black">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="10" fill="currentColor" />
-              <path d="M12 6v12M6 12h12" stroke="white" />
-            </svg>
-          </div>
           <ChevronLeft className="back-icon" />
           <span>Refund Request</span>
         </div>
@@ -93,68 +57,122 @@ const RefundRequest = () => {
         </div>
       </div>
 
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>
-              <div className="datetime-header">
-                Datetime <ChevronDown />
-              </div>
-            </th>
-            <th>Reason</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {mockData.map((item) => (
-            <tr key={item.id}>
-              <td>
-                <div className="user-info">
-                  <div className="avatar"></div>
-                  {item.name}
-                </div>
-              </td>
-              <td>{item.datetime}</td>
-              <td>{item.reason}</td>
-              <td>฿{item.amount.toFixed(2)}</td>
-              <td>
-                <span className={getStatusClass(item.status)}>
-                  {item.status}
-                </span>
-              </td>
-              <td>
-                <button className="details-button">Details</button>
-              </td>
+      {loading ? (
+        <div className="loading">Loading...</div>
+      ) : refunds.length > 0 ? (
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Datetime</th>
+              <th>Reason</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Action</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {refunds.map((item) => (
+              <tr key={item.id}>
+                <td>{item.name || "N/A"}</td>
+                <td>{item.datetime || "N/A"}</td>
+                <td>{item.reason || "No reason provided"}</td>
+                <td>{formatCurrency(item.amount)}</td>
+                <td>
+                  <span className={`status ${item.status ? `status-${item.status.toLowerCase().replace(" ", "-")}` : ""}`}>
+                    {item.status || "Unknown"}
+                  </span>
+                </td>
+                <td>
+                  <button className="details-button" onClick={() => openModal(item)}>Details</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <div className="no-data">No refund requests found</div>
+      )}
 
       <div className="table-footer">
-        <div className="data-info">Showing 6 from 150 data</div>
-        <div className="pagination">
-          <button className="pagination-arrow">
-            <ChevronLeft />
-          </button>
-          {[1, 2, 3, 4, 5].map((page) => (
-            <button
-              key={page}
-              className={`pagination-number ${
-                currentPage === page ? "active" : ""
-              }`}
-              onClick={() => setCurrentPage(page)}
-            >
-              {page}
-            </button>
-          ))}
-          <button className="pagination-arrow">
-            <ChevronRight />
-          </button>
-        </div>
+        <div className="data-info">Showing {refunds.length} requests</div>
       </div>
+
+      {selectedRefund && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Refund Request Details</h3>
+              <X className="close-icon" onClick={closeModal} />
+            </div>
+            
+            <div className="user-info">
+              <div className="avatar"></div>
+              <span>{selectedRefund.name || "N/A"}</span>
+              <span className="date-time">{selectedRefund.datetime || "N/A"}</span>
+            </div>
+            
+            <div className="modal-body">
+              <div className="info-row">
+                <div className="label">Field</div>
+                <div className="value">{selectedRefund.Field || "N/A"}</div>
+              </div>
+              
+              <div className="divider"></div>
+              
+              <div className="info-row">
+                <div className="label">Court</div>
+                <div className="value">{selectedRefund.Court || "N/A"}</div>
+              </div>
+              
+              <div className="divider"></div>
+              
+              <div className="info-row">
+                <div className="label">Date</div>
+                <div className="value">{selectedRefund.Date || "N/A"}</div>
+              </div>
+              
+              <div className="divider"></div>
+              
+              <div className="info-row">
+                <div className="label">Time</div>
+                <div className="value">{selectedRefund.Time || "N/A"}</div>
+              </div>
+              
+              <div className="divider"></div>
+              
+              <div className="info-row">
+                <div className="label">Reason</div>
+                <div className="value">{selectedRefund.reason || "N/A"}</div>
+              </div>
+              
+              <div className="refund-amount">
+                <div className="label">Refund Amount</div>
+                <div className="value">{formatCurrency(selectedRefund.amount || 0)}</div>
+              </div>
+            </div>
+            
+            <div className="rejection-section">
+              <div className="rejection-label">Reason for Rejecting a Request</div>
+              <select 
+                className="dropdown-reason" 
+                value={rejectionReason} 
+                onChange={(e) => setRejectionReason(e.target.value)}
+              >
+                <option value="">Please select a reason</option>
+                <option value="cancellation_policy_violation">Cancellation Policy Violation</option>
+                <option value="non_refundable_deposit">Non-Refundable Deposit</option>
+                <option value="last_minute_cancellation">Last-Minute Cancellation</option>
+              </select>
+            </div>
+            
+            <div className="modal-footer">
+              <button className="reject-button">Reject</button>
+              <button className="accept-button">Accept</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
