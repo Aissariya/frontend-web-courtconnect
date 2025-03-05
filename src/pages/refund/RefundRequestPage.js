@@ -3,8 +3,11 @@ import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
 import { db } from '../../firebaseConfig';
 import { ChevronDown, ChevronLeft, X, ArrowUp, ArrowDown } from "lucide-react"; // Import ไอคอนเพิ่มเติม
 import "./RefundRequest.css";
+import { onSnapshot } from "firebase/firestore";
+
 
 const RefundRequest = () => {
+  const [error, setError] = useState("");
   const [refunds, setRefunds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedRefund, setSelectedRefund] = useState(null);
@@ -15,20 +18,29 @@ const RefundRequest = () => {
   const [sortOrder, setSortOrder] = useState("asc"); // State สำหรับการจัดเรียงวันที่
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "Refund"));
-        const data = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        setRefunds(data);
-      } catch (error) {
-        console.error("Error fetching refunds:", error);
-      } finally {
+    // Subscribe to Firestore collection in real-time
+    const unsubscribe = onSnapshot(
+      collection(db, "Refund"),
+      (snapshot) => {
+        const refundData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setRefunds(refundData);
+        setLoading(false);
+      },
+      (err) => {
+        setError("Error loading data. Please try again later.");
+        console.error("Firebase Error:", err);
         setLoading(false);
       }
-    };
+    );
 
-    fetchData();
+    return () => unsubscribe(); // Cleanup subscription on unmount
   }, []);
+
+  if (loading) return <p>Loading data...</p>;
+  if (error) return <p style={{ color: "red" }}>{error}</p>;
 
   const openModal = (refund) => {
     setSelectedRefund(refund);
@@ -50,12 +62,21 @@ const RefundRequest = () => {
   const handleAccept = async () => {
     if (selectedRefund) {
       const refundRef = doc(db, "Refund", selectedRefund.id);
-      await updateDoc(refundRef, { status: "Accepted" });
+      await updateDoc(refundRef, { 
+        status: "Accepted", 
+        rejectionReason: null // Set rejectionReason to null when accepting
+      });
       setRefunds((prevRefunds) => prevRefunds.map((refund) =>
-        refund.id === selectedRefund.id ? { ...refund, status: "Accepted" } : refund
+        refund.id === selectedRefund.id 
+          ? { 
+              ...refund, 
+              status: "Accepted", 
+              rejectionReason: null // Also update the local state
+            } 
+          : refund
       ));
       setIsAccepted(true);
-      setRejectionReason("none");
+      setRejectionReason(""); // Reset rejection reason in local state
       closeModal();
     }
   };
@@ -70,7 +91,7 @@ const RefundRequest = () => {
       setIsRejected(true);
       closeModal();
     } else {
-      alert("กรุณาเลือกเหตุผลก่อนที่จะปฏิเสธ");
+      alert("Please select a reason before rejecting.");
     }
   };
 
@@ -238,7 +259,9 @@ const RefundRequest = () => {
             </div>
           </div>
         </div>
+        
       )}
+      
     </div>
   );
 };
