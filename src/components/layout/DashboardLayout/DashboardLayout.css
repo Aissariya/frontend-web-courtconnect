@@ -131,3 +131,77 @@ main {
   padding-left: 24px;
   padding-right: 24px;
 }
+
+.notification-container {
+  position: relative;
+  display: inline-block;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 10px;
+  height: 10px;
+  background-color: red;
+  border-radius: 50%;
+  display: none;
+}
+
+.notification-container .notification-badge {
+  display: block;
+}
+
+/* ปรับแต่งปุ่มแจ้งเตือน */
+.icon-button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #4b5563;
+  position: relative;
+  padding: 10px;
+  border-radius: 50%;
+}
+
+.icon-button:hover {
+  background-color: #f3f4f6;
+}
+
+/* Popup แจ้งเตือน */
+.notification-popup {
+  position: absolute;
+  top: 35px;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  width: 280px;
+  font-size: 14px;
+  z-index: 100;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.notification-popup.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.view-request-button {
+  width: 100%;
+  background-color: #4fbc3a;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.view-request-button:hover {
+  background-color: #84dc72;
+}
