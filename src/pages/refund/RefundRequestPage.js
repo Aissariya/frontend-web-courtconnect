@@ -1,160 +1,267 @@
-import React, { useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
+import { db } from '../../firebaseConfig';
+import { ChevronDown, ChevronLeft, X, ArrowUp, ArrowDown } from "lucide-react"; // Import ไอคอนเพิ่มเติม
 import "./RefundRequest.css";
+import { onSnapshot } from "firebase/firestore";
+
 
 const RefundRequest = () => {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [error, setError] = useState("");
+  const [refunds, setRefunds] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedRefund, setSelectedRefund] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [isRejected, setIsRejected] = useState(false);
+  const [isAccepted, setIsAccepted] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [sortOrder, setSortOrder] = useState("asc"); // State สำหรับการจัดเรียงวันที่
 
-  const mockData = [
-    {
-      id: 1,
-      name: "Phillip Vetrovs",
-      datetime: "2024-12-31 14:59:41",
-      reason: "Made a mistake in booking",
-      amount: 500.0,
-      status: "Need Action",
-    },
-    {
-      id: 2,
-      name: "Jocelyn Donin",
-      datetime: "2024-12-31 14:59:41",
-      reason: "Change of plans",
-      amount: 280.0,
-      status: "Accepted",
-    },
-    {
-      id: 3,
-      name: "Cooper Gouse",
-      datetime: "2024-12-31 14:59:41",
-      reason: "Personal reasons",
-      amount: 200.0,
-      status: "Rejected",
-    },
-    {
-      id: 4,
-      name: "Dulce Baptista",
-      datetime: "2024-12-31 14:59:41",
-      reason: "Health issues",
-      amount: 550.0,
-      status: "Accepted",
-    },
-    {
-      id: 5,
-      name: "Brandon Saris",
-      datetime: "2024-12-31 14:59:41",
-      reason: "Transportation issues",
-      amount: 390.0,
-      status: "Accepted",
-    },
-    {
-      id: 6,
-      name: "Phillip Vetrovs",
-      datetime: "2024-12-31 14:59:41",
-      reason: "Weather concerns",
-      amount: 120.0,
-      status: "Accepted",
-    },
-  ];
+  useEffect(() => {
+    // Subscribe to Firestore collection in real-time
+    const unsubscribe = onSnapshot(
+      collection(db, "Refund"),
+      (snapshot) => {
+        const refundData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setRefunds(refundData);
+        setLoading(false);
+      },
+      (err) => {
+        setError("Error loading data. Please try again later.");
+        console.error("Firebase Error:", err);
+        setLoading(false);
+      }
+    );
 
-  const getStatusClass = (status) => {
-    switch (status) {
-      case "Need Action":
-        return "status status-need-action";
-      case "Accepted":
-        return "status status-accepted";
-      case "Rejected":
-        return "status status-rejected";
-      default:
-        return "status";
+    return () => unsubscribe(); // Cleanup subscription on unmount
+  }, []);
+
+  if (loading) return <p>Loading data...</p>;
+  if (error) return <p style={{ color: "red" }}>{error}</p>;
+
+  const openModal = (refund) => {
+    setSelectedRefund(refund);
+    setRejectionReason(refund.rejectionReason || "");
+    setIsRejected(refund.status === "Rejected");
+    setIsAccepted(refund.status === "Accepted");
+  };
+
+  const closeModal = () => {
+    setSelectedRefund(null);
+    setIsRejected(false);
+    setIsAccepted(false);
+  };
+
+  const formatCurrency = (amount) => {
+    return `฿${amount ? amount.toFixed(2) : "0.00"}`;
+  };
+
+  const handleAccept = async () => {
+    if (selectedRefund) {
+      const refundRef = doc(db, "Refund", selectedRefund.id);
+      await updateDoc(refundRef, { 
+        status: "Accepted", 
+        rejectionReason: null // Set rejectionReason to null when accepting
+      });
+      setRefunds((prevRefunds) => prevRefunds.map((refund) =>
+        refund.id === selectedRefund.id 
+          ? { 
+              ...refund, 
+              status: "Accepted", 
+              rejectionReason: null // Also update the local state
+            } 
+          : refund
+      ));
+      setIsAccepted(true);
+      setRejectionReason(""); // Reset rejection reason in local state
+      closeModal();
     }
+  };
+
+  const handleReject = async () => {
+    if (selectedRefund && rejectionReason) {
+      const refundRef = doc(db, "Refund", selectedRefund.id);
+      await updateDoc(refundRef, { status: "Rejected", rejectionReason: rejectionReason });
+      setRefunds((prevRefunds) => prevRefunds.map((refund) =>
+        refund.id === selectedRefund.id ? { ...refund, status: "Rejected", rejectionReason: rejectionReason } : refund
+      ));
+      setIsRejected(true);
+      closeModal();
+    } else {
+      alert("Please select a reason before rejecting.");
+    }
+  };
+
+  // ฟังก์ชันสำหรับกรอง refund ตามสถานะ
+  const filteredRefunds = statusFilter ? refunds.filter(refund => refund.status === statusFilter) : refunds;
+
+  // ฟังก์ชันสำหรับจัดเรียง refund ตามวันที่
+  const sortedRefunds = [...filteredRefunds].sort((a, b) => {
+    const dateA = new Date(a.datetime);
+    const dateB = new Date(b.datetime);
+    return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+  });
+
+  // ฟังก์ชันสลับการจัดเรียง
+  const toggleSortOrder = () => {
+    setSortOrder((prevOrder) => (prevOrder === "asc" ? "desc" : "asc"));
   };
 
   return (
     <div className="container">
       <div className="refund-header">
-        <div className="refund-title">
-          <div className="icon-black">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="10" fill="currentColor" />
-              <path d="M12 6v12M6 12h12" stroke="white" />
-            </svg>
-          </div>
+        <div className="refund-title" onClick={() => setStatusFilter("")} style={{ cursor: "pointer" }}>
           <ChevronLeft className="back-icon" />
           <span>Refund Request</span>
         </div>
+
         <div className="status-dropdown">
-          <select className="status-button">
-            <option>Status</option>
-            <option>Need Action</option>
-            <option>Accepted</option>
-            <option>Rejected</option>
+          <select className="status-button" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="">All Status</option>
+            <option value="Need Action">Need Action</option>
+            <option value="Accepted">Accepted</option>
+            <option value="Rejected">Rejected</option>
           </select>
           <ChevronDown className="dropdown-icon" />
         </div>
       </div>
 
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>
-              <div className="datetime-header">
-                Datetime <ChevronDown />
-              </div>
-            </th>
-            <th>Reason</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {mockData.map((item) => (
-            <tr key={item.id}>
-              <td>
-                <div className="user-info">
-                  <div className="avatar"></div>
-                  {item.name}
-                </div>
-              </td>
-              <td>{item.datetime}</td>
-              <td>{item.reason}</td>
-              <td>฿{item.amount.toFixed(2)}</td>
-              <td>
-                <span className={getStatusClass(item.status)}>
-                  {item.status}
-                </span>
-              </td>
-              <td>
-                <button className="details-button">Details</button>
-              </td>
+      {loading ? (
+        <div className="loading">Loading...</div>
+      ) : sortedRefunds.length > 0 ? (
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>
+                Datetime
+                <button className="sort-button2" onClick={toggleSortOrder}>
+                  {sortOrder === "asc" ? <ArrowUp className="sort-icon2" /> : <ArrowDown className="sort-icon2" />}
+                </button>
+              </th>
+              <th>Reason</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Action</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sortedRefunds.map((item) => (
+              <tr key={item.id}>
+                <td>{item.name || "N/A"}</td>
+                <td>{item.datetime || "N/A"}</td>
+                <td>{item.reason || "No reason provided"}</td>
+                <td>{formatCurrency(item.amount)}</td>
+                <td>
+                  <span className={`status ${item.status ? `status-${item.status.toLowerCase().replace(" ", "-")}` : ""}`}>
+                    {item.status || "Unknown"}
+                  </span>
+                </td>
+                <td>
+                  <button className="details-button" onClick={() => openModal(item)}>Details</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <div className="no-data">No refund requests found</div>
+      )}
 
       <div className="table-footer">
-        <div className="data-info">Showing 6 from 150 data</div>
-        <div className="pagination">
-          <button className="pagination-arrow">
-            <ChevronLeft />
-          </button>
-          {[1, 2, 3, 4, 5].map((page) => (
-            <button
-              key={page}
-              className={`pagination-number ${
-                currentPage === page ? "active" : ""
-              }`}
-              onClick={() => setCurrentPage(page)}
-            >
-              {page}
-            </button>
-          ))}
-          <button className="pagination-arrow">
-            <ChevronRight />
-          </button>
-        </div>
+        <div className="data-info">Showing {sortedRefunds.length} requests</div>
       </div>
+
+      {selectedRefund && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Refund Request Details</h3>
+              <X className="close-icon" onClick={closeModal} />
+            </div>
+
+            <div className="user-info">
+              <div className="avatar"></div>
+              <span>{selectedRefund.name || "N/A"}</span>
+              <span className="date-time">{selectedRefund.datetime || "N/A"}</span>
+            </div>
+
+            <div className="modal-body">
+              <div className="info-row">
+                <div className="label">Field</div>
+                <div className="value">{selectedRefund.Field || "N/A"}</div>
+              </div>
+
+              <div className="divider"></div>
+
+              <div className="info-row">
+                <div className="label">Court</div>
+                <div className="value">{selectedRefund.Court || "N/A"}</div>
+              </div>
+
+              <div className="divider"></div>
+
+              <div className="date-time-wrapper">
+                <div className="info-row">
+                  <div className="label">Date</div>
+                  <div className="value">{selectedRefund.Date || "N/A"}</div>
+                </div>
+
+                <div className="info-row">
+                  <div className="label">Time</div>
+                  <div className="value">{selectedRefund.Time || "N/A"}</div>
+                </div>
+              </div>
+
+              <div className="divider"></div>
+
+              <div className="info-row">
+                <div className="label">Reason</div>
+                <div className="value">{selectedRefund.reason || "N/A"}</div>
+              </div>
+
+              <div className="divider"></div>
+
+              <div className="refund-amount">
+                <div className="label">Refund Amount</div>
+                <div className="value">{formatCurrency(selectedRefund.amount || 0)}</div>
+              </div>
+            </div>
+
+            <div className="rejection-section">
+              <div className="rejection-label">Reason for Rejecting a Request</div>
+              <select
+                className="dropdown-reason"
+                value={isAccepted ? "none" : rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                disabled={isRejected || isAccepted}
+              >
+                <option value="">Please select a reason</option>
+                <option value="cancellation_policy_violation">Cancellation Policy Violation</option>
+                <option value="non_refundable_deposit">Non-Refundable Deposit</option>
+                <option value="last_minute_cancellation">Last-Minute Cancellation</option>
+                <option value="damage_to_property">Damage to Property</option>
+                <option value="violation_of_terms">Violation of Terms and Conditions</option>
+                <option value="booking_already_fulfilled">Booking Already Fulfilled</option>
+              </select>
+            </div>
+
+            <div className="modal-footer">
+              {!isAccepted && !isRejected && (
+                <>
+                  <button className="reject-button" onClick={handleReject}>Reject</button>
+                  <button className="accept-button" onClick={handleAccept}>Accept</button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        
+      )}
+      
     </div>
   );
 };

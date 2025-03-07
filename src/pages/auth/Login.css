@@ -114,7 +114,7 @@
 }
 
 .login-create-account-link {
-  color: #a2f193;
+  color: green;
   font-weight: bold;
 }
 
@@ -133,4 +133,14 @@
 .login-page-container {
   overflow: hidden; /* ปิดการเลื่อนแค่หน้า Login */
   height: 100vh;
+}
+
+
+.login-forgot-password:hover {
+  text-decoration: underline;
+}
+
+
+.login-create-account-link:hover {
+  text-decoration: underline;
 }

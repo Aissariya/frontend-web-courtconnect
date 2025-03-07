@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import './Login.css';
 import logo from './images/logo.png';
-import backgroundimage from './images/newbg3.png';
+import backgroundimage from './images/newbg5.png';
 import { FaLock, FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa";
 import { auth } from "../../firebaseConfig";
 import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
@@ -129,6 +129,7 @@ const Login = () => {
               className="login-input"
               value={formData.email}
               onChange={handleChange}
+              onKeyDown={(e) => e.key === " " && e.preventDefault()}
               required
             />
           </div>
@@ -143,6 +144,7 @@ const Login = () => {
               className="login-input"
               value={formData.password}
               onChange={handleChange}
+              onKeyDown={(e) => e.key === " " && e.preventDefault()}
               required
             />
             <span className="login-toggle-password" onClick={() => setShowPassword(!showPassword)}>
@@ -163,7 +165,7 @@ const Login = () => {
         <p
           className="login-forgot-password"
           onClick={() => navigate("/forgotpassword")}
-          style={{ cursor: "pointer" }}
+          style={{ cursor: "pointer" , fontWeight: "bold"}}
         >
           Forgot your password?
         </p>
