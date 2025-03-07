@@ -101,7 +101,7 @@ const BookingHistoryTable = () => {
           courtId: data.court_id || '',
           startTime: data.start_time?.toDate ? data.start_time.toDate() : new Date(data.start_time),
           endTime: data.end_time?.toDate ? data.end_time.toDate() : new Date(data.end_time),
-          status: data.status || 'รอดำเนินการ'
+          status: data.status || 'Pending'
         };
       });
       
@@ -197,7 +197,7 @@ const BookingHistoryTable = () => {
       case 'cancelled':
       case 'rejected':
         return 'status-cancelled';
-      case 'รอดำเนินการ':
+      case 'Pending':
       case 'รออนุมัติ':
       case 'pending':
       case 'waiting':
@@ -208,7 +208,7 @@ const BookingHistoryTable = () => {
 
   // แปลงสถานะเป็นภาษาไทย (ถ้าจำเป็น)
   const translateStatus = (status) => {
-    if (!status) return 'รอดำเนินการ';
+    if (!status) return 'Pending';
     
     // ถ้าเป็นภาษาอังกฤษ ให้แปลเป็นภาษาไทย
     switch (status.toLowerCase()) {
@@ -221,7 +221,7 @@ const BookingHistoryTable = () => {
         return 'ยกเลิก';
       case 'pending':
       case 'waiting':
-        return 'รอดำเนินการ';
+        return 'Pending';
       default:
         return status; // ถ้าเป็นภาษาไทยหรืออื่นๆ ให้ใช้ค่าเดิม
     }
