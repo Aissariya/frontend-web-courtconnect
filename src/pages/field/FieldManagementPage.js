@@ -1,228 +1,189 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import Swal from 'sweetalert2';
+import { ShoppingBasketIcon as Basketball, List, ChevronLeft, ChevronRight } from 'lucide-react';
 import './FieldManagementPage.css';
 import AddCourtForm from "./AddCourtForm"
 
-const courtsData = [
-  {
-    field: "Alpha Court TH",
-    courtType: "Football",
-    availableHours: "13:00 - 23:00",
-    capacity: 10,
-    bookingSlots: "Hourly",
-    status: "Available",
-  },
-  {
-    field: "Beta Court TH",
-    courtType: "Basketball",
-    availableHours: "09:00 - 18:00",
-    capacity: 7,
-    bookingSlots: "Hourly",
-    status: "Available",
-  },
-  {
-    field: "Gamma Court TH",
-    courtType: "Swim",
-    availableHours: "15:00 - 20:00",
-    capacity: 25,
-    bookingSlots: "30 minutes",
-    status: "Available",
-  },
-  {
-    field: "Lion Single",
-    courtType: "Badminton",
-    availableHours: "17:30 - 23:30",
-    capacity: 12,
-    bookingSlots: "Hourly",
-    status: "Available",
-  },
-  {
-    field: "Football Club",
-    courtType: "Yoga",
-    availableHours: "08:00 - 18:00",
-    capacity: 5,
-    bookingSlots: "Hourly",
-    status: "Unavailable",
-  },
-]
+function CourtManagement() {
+  const [selectedPage, setSelectedPage] = useState(1);
+  
+  const handleViewDetails = (courtName) => {
+    Swal.fire({
+      title: `${courtName} Details`,
+      text: `You are viewing details for ${courtName}`,
+      icon: 'info',
+      confirmButtonText: 'Close',
+      confirmButtonColor: '#A2F193',
+    });
+  };
 
-const FieldManagement = () => {
-  const [courts, setCourts] = useState(courtsData)
-  const [selectedCourt, setSelectedCourt] = useState(null)
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
-  const [isAddCourtOpen, setIsAddCourtOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState("field-management")
-
-  const handleDetails = (court) => {
-    setSelectedCourt(court)
-    setIsDetailsOpen(true)
-  }
-
-  const handleAddCourt = () => {
-    setIsAddCourtOpen(true)
-  }
-
-  const handleCloseDetails = () => {
-    setIsDetailsOpen(false)
-  }
-
-  const handleCloseAddCourt = () => {
-    setIsAddCourtOpen(false)
-  }
-
-  const handleTabClick = (tab) => {
-    setActiveTab(tab)
-  }
-
-  const handleAddNewCourt = (newCourt) => {
-    setCourts([...courts, newCourt])
-    setIsAddCourtOpen(false)
-  }
+  const courts = [
+    { 
+      id: 1, 
+      name: 'Alpha Court TH', 
+      type: 'Football', 
+      hours: '13:00 - 23:00', 
+      capacity: '22', 
+      bookingSlots: 'Hourly', 
+      status: 'Available'
+    },
+    { 
+      id: 2, 
+      name: 'Beta Court TH', 
+      type: 'Basketball', 
+      hours: '09:00 - 18:00', 
+      capacity: '12', 
+      bookingSlots: 'Hourly', 
+      status: 'Available'
+    },
+    { 
+      id: 3, 
+      name: 'Gamma Court TH', 
+      type: 'Swim', 
+      hours: '15:00 - 20:00', 
+      capacity: '25', 
+      bookingSlots: '30 minutes', 
+      status: 'Available'
+    },
+    { 
+      id: 4, 
+      name: 'Lion Singto', 
+      type: 'Badminton', 
+      hours: '17:30 - 23:30', 
+      capacity: '22', 
+      bookingSlots: 'Hourly', 
+      status: 'Available'
+    },
+    { 
+      id: 5, 
+      name: 'Football Club', 
+      type: 'Yoga', 
+      hours: '08:00 - 18:00', 
+      capacity: '13', 
+      bookingSlots: 'Hourly', 
+      status: 'Unavailable'
+    },
+  ];
 
   return (
-    <div className="field-management">
-      <header className="header">
-        <h1>Court Connect</h1>
-
-        <nav className="navigation">
-          <button
-            className={activeTab === "refund-request" ? "active" : ""}
-            onClick={() => handleTabClick("refund-request")}
-          >
-            Refund Request
-          </button>
-          <button className={activeTab === "dashboard" ? "active" : ""} onClick={() => handleTabClick("dashboard")}>
-            Dashboard
-          </button>
-          <button
-            className={activeTab === "field-management" ? "active" : ""}
-            onClick={() => handleTabClick("field-management")}
-          >
-            Field Management
-          </button>
-          <button className={activeTab === "profile" ? "active" : ""} onClick={() => handleTabClick("profile")}>
-            Profile
-          </button>
-        </nav>
-
-        <div className="user-actions">
-          <button className="add-court-btn" onClick={handleAddCourt}>
-            <span className="icon">+</span>
-            Add Court
-          </button>
-          <div className="profile-icon">👤</div>
-        </div>
-      </header>
-
-      <div className="filter-section">
-        <button className="filter-btn">
-          <span className="filter-icon">⚙️</span>
-          Filter
-        </button>
+    <div className="court-management">
+      <div className="filter-button">
+        <svg width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4.5 7.5H18.5" stroke="#363636" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M6.5 11.5H16.5" stroke="#363636" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M8.5 15.5H14.5" stroke="#363636" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+        <span>Filter</span>
       </div>
-
-      <div className="courts-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Field</th>
-              <th>Court Type</th>
-              <th>Available Hours</th>
-              <th>Capacity</th>
-              <th>Booking Slots</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {courts.map((court, index) => (
-              <tr key={index}>
-                <td>{court.field}</td>
-                <td>{court.courtType}</td>
-                <td>{court.availableHours}</td>
-                <td>{court.capacity}</td>
-                <td>{court.bookingSlots}</td>
-                <td>
-                  <span className={`status ${court.status.toLowerCase()}`}>{court.status}</span>
-                </td>
-                <td>
-                  <button onClick={() => handleDetails(court)} className="details-btn">
+      
+      <div className="dashboard-button">
+        <span>Add Court</span>
+      </div>
+      
+      <div className="main-container">
+        <div className="header-section">
+          <div className="topic-card">
+            <div className="icon-container">
+              <svg width="27" height="27" viewBox="0 0 27 27" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13.5 2.25C7.29 2.25 2.25 7.29 2.25 13.5C2.25 19.71 7.29 24.75 13.5 24.75C19.71 24.75 24.75 19.71 24.75 13.5C24.75 7.29 19.71 2.25 13.5 2.25ZM13.5 22.5C8.53 22.5 4.5 18.47 4.5 13.5C4.5 8.53 8.53 4.5 13.5 4.5C18.47 4.5 22.5 8.53 22.5 13.5C22.5 18.47 18.47 22.5 13.5 22.5Z" fill="#363636"/>
+                <path d="M14.625 7.875C14.625 8.49632 14.1213 9 13.5 9C12.8787 9 12.375 8.49632 12.375 7.875C12.375 7.25368 12.8787 6.75 13.5 6.75C14.1213 6.75 14.625 7.25368 14.625 7.875Z" fill="#363636"/>
+                <path d="M14.625 19.125C14.625 19.7463 14.1213 20.25 13.5 20.25C12.8787 20.25 12.375 19.7463 12.375 19.125C12.375 18.5037 12.8787 18 13.5 18C14.1213 18 14.625 18.5037 14.625 19.125Z" fill="#363636"/>
+                <path d="M7.875 14.625C7.25368 14.625 6.75 14.1213 6.75 13.5C6.75 12.8787 7.25368 12.375 7.875 12.375C8.49632 12.375 9 12.8787 9 13.5C9 14.1213 8.49632 14.625 7.875 14.625Z" fill="#363636"/>
+                <path d="M19.125 14.625C18.5037 14.625 18 14.1213 18 13.5C18 12.8787 18.5037 12.375 19.125 12.375C19.7463 12.375 20.25 12.8787 20.25 13.5C20.25 14.1213 19.7463 14.625 19.125 14.625Z" fill="#363636"/>
+              </svg>
+            </div>
+            <span className="topic-text">My Court</span>
+          </div>
+          
+          <div className="selection-dropdown">
+            <span>Status</span>
+            <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5.25 8.75L10.5 14L15.75 8.75" stroke="rgba(54, 54, 54, 0.5)" strokeWidth="2" />
+            </svg>
+          </div>
+        </div>
+        
+        <div className="table-container">
+          <div className="table-header">
+            <div className="header-cell with-sort">
+              <span>Field</span>
+              <div className="sort-icon">
+                <svg width="10.51" height="15.76" viewBox="0 0 11 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5.5 0L10 5H1L5.5 0Z" fill="rgba(54, 54, 54, 0.5)"/>
+                  <path d="M5.5 16L1 11H10L5.5 16Z" fill="rgba(54, 54, 54, 0.5)"/>
+                </svg>
+              </div>
+            </div>
+            <div className="header-cell with-sort">
+              <span>Court Type</span>
+              <div className="sort-icon">
+                <svg width="10.51" height="15.76" viewBox="0 0 11 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5.5 0L10 5H1L5.5 0Z" fill="rgba(54, 54, 54, 0.5)"/>
+                  <path d="M5.5 16L1 11H10L5.5 16Z" fill="rgba(54, 54, 54, 0.5)"/>
+                </svg>
+              </div>
+            </div>
+            <div className="header-cell">
+              <span>Available Hours</span>
+            </div>
+            <div className="header-cell">
+              <span>Capacity</span>
+            </div>
+            <div className="header-cell">
+              <span>Booking Slots</span>
+            </div>
+            <div className="header-cell">
+              <span>Status</span>
+            </div>
+            <div className="header-cell">
+              <span>Action</span>
+            </div>
+          </div>
+          
+          <div className="table-body">
+            {courts.map(court => (
+              <div className="table-row" key={court.id}>
+                <div className="court-info">
+                  <div className="court-image"></div>
+                  <span className="court-name">{court.name}</span>
+                </div>
+                <div className="court-type">{court.type}</div>
+                <div className="court-hours">{court.hours}</div>
+                <div className="court-capacity">{court.capacity}</div>
+                <div className="court-booking-slots">{court.bookingSlots}</div>
+                <div className={`court-status ${court.status.toLowerCase()}`}>
+                  {court.status}
+                </div>
+                <div className="court-action">
+                  <button className="action-button" onClick={() => handleViewDetails(court.name)}>
                     Details
                   </button>
-                </td>
-              </tr>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
-
+          </div>
+        </div>
+        
         <div className="pagination">
-          <button className="active">1</button>
-          <button>2</button>
-          <button>3</button>
-          <button>4</button>
-          <button>5</button>
+          <div className="pagination-text">Showing 1 to 5 of 5 entries</div>
+          <div className="pagination-controls">
+            <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg" className="chevron-left">
+              <path d="M13 16L7 10.5L13 5" stroke="rgba(54, 54, 54, 0.5)" strokeWidth="2" />
+            </svg>
+            <div className={`page-number ${selectedPage === 1 ? 'active' : ''}`} onClick={() => setSelectedPage(1)}>1</div>
+            <div className={`page-number ${selectedPage === 2 ? 'active' : ''}`} onClick={() => setSelectedPage(2)}>2</div>
+            <div className={`page-number ${selectedPage === 3 ? 'active' : ''}`} onClick={() => setSelectedPage(3)}>3</div>
+            <div className={`page-number ${selectedPage === 4 ? 'active' : ''}`} onClick={() => setSelectedPage(4)}>4</div>
+            <div className={`page-number ${selectedPage === 5 ? 'active' : ''}`} onClick={() => setSelectedPage(5)}>5</div>
+            <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg" className="chevron-right">
+              <path d="M8 5L14 10.5L8 16" stroke="#363636" strokeWidth="2" />
+            </svg>
+          </div>
         </div>
       </div>
-
-      {/* Court Details Modal */}
-      {isDetailsOpen && selectedCourt && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-header">
-              <h2>{selectedCourt.field} Details</h2>
-              <button className="close-btn" onClick={handleCloseDetails}>
-                ×
-              </button>
-            </div>
-            <div className="modal-content">
-              <div className="detail-row">
-                <span className="detail-label">Court Type:</span>
-                <span className="detail-value">{selectedCourt.courtType}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Available Hours:</span>
-                <span className="detail-value">{selectedCourt.availableHours}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Capacity:</span>
-                <span className="detail-value">{selectedCourt.capacity}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Booking Slots:</span>
-                <span className="detail-value">{selectedCourt.bookingSlots}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Status:</span>
-                <span className={`status ${selectedCourt.status.toLowerCase()}`}>{selectedCourt.status}</span>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="close-modal-btn" onClick={handleCloseDetails}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Court Modal */}
-      {isAddCourtOpen && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-header">
-              <h2>Add New Court</h2>
-              <button className="close-btn" onClick={handleCloseAddCourt}>
-                ×
-              </button>
-            </div>
-            <div className="modal-content">
-              <AddCourtForm onSubmit={handleAddNewCourt} onCancel={handleCloseAddCourt} />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
-  )
+  );
 }
 
-export default FieldManagement
+export default CourtManagement;
