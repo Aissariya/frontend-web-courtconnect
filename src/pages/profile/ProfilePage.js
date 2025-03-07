@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil, User } from 'lucide-react'; // เพิ่ม import User icon
 import './Profile.css';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import EditProfile from './EditProfile';
 
 const Profile = () => {
   // State to store user profile data
@@ -12,7 +13,7 @@ const Profile = () => {
     surname: '',
     email: '',
     phone: '-',
-    profilePicture: null
+    profileImage: null
   });
   
   // State for loading indicator
@@ -20,6 +21,9 @@ const Profile = () => {
   
   // State for error handling
   const [error, setError] = useState(null);
+
+  // State for edit modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Firebase instances
   const auth = getAuth();
@@ -54,7 +58,7 @@ const Profile = () => {
           surname: userData.surname || '',
           email: userData.email || currentUser.email || '',
           phone: userData.phone || '-',
-          profilePicture: userData.profilePicture || null
+          profileImage: userData.profileImage || null
         });
       } catch (err) {
         console.error('Error fetching profile data:', err);
@@ -79,7 +83,7 @@ const Profile = () => {
       }
 
       // Create a reference for the profile picture in Firebase Storage
-      const profilePicRef = ref(storage, `profilePictures/${currentUser.uid}`);
+      const profilePicRef = ref(storage, `profileImages/${currentUser.uid}`);
       
       // Upload the file
       await uploadBytes(profilePicRef, file);
@@ -90,13 +94,13 @@ const Profile = () => {
       // Update user document with new profile picture URL
       const userDocRef = doc(db, 'users', currentUser.uid);
       await updateDoc(userDocRef, {
-        profilePicture: downloadURL
+        profileImage: downloadURL
       });
 
       // Update state
       setProfileData(prev => ({
         ...prev,
-        profilePicture: downloadURL
+        profileImage: downloadURL
       }));
 
     } catch (err) {
@@ -114,22 +118,22 @@ const Profile = () => {
       }
 
       // Only attempt to delete from storage if there is an existing profile picture
-      if (profileData.profilePicture) {
+      if (profileData.profileImage) {
         // Create a reference to the file to delete
-        const profilePicRef = ref(storage, `profilePictures/${currentUser.uid}`);
+        const profilePicRef = ref(storage, `profileImages/${currentUser.uid}`);
         await deleteObject(profilePicRef);
       }
       
       // Update user document to remove profile picture reference
       const userDocRef = doc(db, 'users', currentUser.uid);
       await updateDoc(userDocRef, {
-        profilePicture: null
+        profileImage: null
       });
 
       // Update state
       setProfileData(prev => ({
         ...prev,
-        profilePicture: null
+        profileImage: null
       }));
 
     } catch (err) {
@@ -138,9 +142,19 @@ const Profile = () => {
     }
   };
 
-  // Navigate to edit profile page
-  const navigateToEditProfile = () => {
-    window.location.href = '/edit-profile';
+  // Open edit profile modal
+  const handleOpenEditModal = () => {
+    setIsEditModalOpen(true);
+  };
+
+  // Close edit profile modal
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+  };
+
+  // Handle profile update from edit modal
+  const handleProfileUpdate = (updatedData) => {
+    setProfileData(updatedData);
   };
 
   // Loading state
@@ -169,7 +183,10 @@ const Profile = () => {
       {/* Profile Section */}
       <div className="profile-section">
         <div className="profile-header">
-          <div className="profile-icon-small"></div>
+          {/* ใช้ไอคอน User เท่านั้น ไม่ดึงรูปโปรไฟล์มาแสดง */}
+          <div className="profile-icon-small">
+            <User size={24} color="#6b7280" />
+          </div>
           <span>Profile</span>
         </div>
 
@@ -178,7 +195,7 @@ const Profile = () => {
           <div className="profile-card">
             <div 
               className="profile-picture" 
-              style={profileData.profilePicture ? { backgroundImage: `url(${profileData.profilePicture})` } : {}}
+              style={profileData.profileImage ? { backgroundImage: `url(${profileData.profileImage})` } : {}}
             ></div>
             <div className="profile-name">{`${profileData.name} ${profileData.surname}`}</div>
             <div className="button-group">
@@ -199,7 +216,7 @@ const Profile = () => {
           <div className="profile-card">
             <div className="card-header">
               <h2>Personal Information</h2>
-              <button className="edit-button" onClick={navigateToEditProfile}>
+              <button className="edit-button" onClick={handleOpenEditModal}>
                 <Pencil className="edit-icon" />
                 <span>Edit</span>
               </button>
@@ -230,6 +247,14 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      <EditProfile 
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        profileData={profileData}
+        onProfileUpdate={handleProfileUpdate}
+      />
     </div>
   );
 };

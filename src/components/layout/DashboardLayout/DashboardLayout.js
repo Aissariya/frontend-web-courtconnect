@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, LogOut } from 'lucide-react';
 import { getAuth, signOut } from 'firebase/auth';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import Swal from 'sweetalert2';
 import './DashboardLayout.css';
@@ -12,11 +12,39 @@ const DashboardLayout = () => {
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
-
+  const [profileImage, setProfileImage] = useState(null);
+  
   const [hasNewRequest, setHasNewRequest] = useState(false); // แสดงจุดแดง
   const [showNotification, setShowNotification] = useState(false); // popup แจ้งเตือน
   const [hasViewedRequests, setHasViewedRequests] = useState(false); // ตรวจสอบว่ากด View Requests แล้วหรือยัง
   const notificationRef = useRef(null);
+
+  // ดึงข้อมูลโปรไฟล์ผู้ใช้
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        
+        if (user) {
+          const userDocRef = doc(db, "users", user.uid);
+          const userDoc = await getDoc(userDocRef);
+          
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            // เปลี่ยนจาก profilePicture เป็น profileImage
+            if (userData.profileImage) {
+              setProfileImage(userData.profileImage);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
+    };
+    
+    fetchUserProfile();
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "Refund"), (snapshot) => {
@@ -165,7 +193,15 @@ const DashboardLayout = () => {
 
               {/* Avatar และ Dropdown Menu */}
               <div className="avatar-container" ref={dropdownRef}>
-                <div className="avatar" onClick={toggleDropdown}></div>
+                <div 
+                  className="avatar" 
+                  onClick={toggleDropdown}
+                  style={profileImage ? {
+                    backgroundImage: `url(${profileImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                  } : {}}
+                ></div>
                 {showDropdown && (
                   <div className="dropdown-menu">
                     <button className="logout-button" onClick={handleLogout}>
