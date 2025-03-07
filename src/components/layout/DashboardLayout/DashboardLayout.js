@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, LogOut } from 'lucide-react';
 import './DashboardLayout.css';
 import { getAuth, signOut } from 'firebase/auth';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import Swal from 'sweetalert2';
 
 const DashboardLayout = () => {
@@ -10,6 +11,7 @@ const DashboardLayout = () => {
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const [profilePicture, setProfilePicture] = useState(null);
   
   const isActive = (path) => {
     return location.pathname === path;
@@ -21,6 +23,37 @@ const DashboardLayout = () => {
     { path: '/dashboard/field-management', label: 'Field Management' },
     { path: '/dashboard/profile', label: 'Profile' }
   ];
+
+  // Fetch user profile picture
+  useEffect(() => {
+    const fetchProfilePicture = async () => {
+      try {
+        const auth = getAuth();
+        const db = getFirestore();
+        
+        // Ensure user is authenticated
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+          return;
+        }
+
+        // Get user document from Firestore
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.profilePicture) {
+            setProfilePicture(userData.profilePicture);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching profile picture:', err);
+      }
+    };
+
+    fetchProfilePicture();
+  }, []);
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -122,7 +155,11 @@ const DashboardLayout = () => {
                 <Bell size={20} />
               </button>
               <div className="avatar-container" ref={dropdownRef}>
-                <div className="avatar" onClick={toggleDropdown}></div>
+                <div 
+                  className={`avatar ${profilePicture ? 'avatar-with-image' : ''}`}
+                  onClick={toggleDropdown}
+                  style={profilePicture ? { backgroundImage: `url(${profilePicture})` } : {}}
+                ></div>
                 {showDropdown && (
                   <div className="dropdown-menu">
                     <button className="logout-button" onClick={handleLogout}>

@@ -4,6 +4,7 @@ import './Profile.css';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import EditProfile from './EditProfile';
 
 const Profile = () => {
   // State to store user profile data
@@ -20,6 +21,9 @@ const Profile = () => {
   
   // State for error handling
   const [error, setError] = useState(null);
+
+  // State for edit modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Firebase instances
   const auth = getAuth();
@@ -138,9 +142,19 @@ const Profile = () => {
     }
   };
 
-  // Navigate to edit profile page
-  const navigateToEditProfile = () => {
-    window.location.href = '/edit-profile';
+  // Open edit profile modal
+  const handleOpenEditModal = () => {
+    setIsEditModalOpen(true);
+  };
+
+  // Close edit profile modal
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+  };
+
+  // Handle profile update from edit modal
+  const handleProfileUpdate = (updatedData) => {
+    setProfileData(updatedData);
   };
 
   // Loading state
@@ -199,7 +213,7 @@ const Profile = () => {
           <div className="profile-card">
             <div className="card-header">
               <h2>Personal Information</h2>
-              <button className="edit-button" onClick={navigateToEditProfile}>
+              <button className="edit-button" onClick={handleOpenEditModal}>
                 <Pencil className="edit-icon" />
                 <span>Edit</span>
               </button>
@@ -230,6 +244,14 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      <EditProfile 
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        profileData={profileData}
+        onProfileUpdate={handleProfileUpdate}
+      />
     </div>
   );
 };

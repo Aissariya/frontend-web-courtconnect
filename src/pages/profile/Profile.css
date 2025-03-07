@@ -1,168 +1,326 @@
 .profile-container {
-    padding: 24px;
-    background-color: white;
-    border-radius: 8px;
-  }
-  
-  /* Navigation */
-  .navigation {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 32px;
-    padding: 16px;
-    background-color: white;
-    border-radius: 8px;
-  }
-  
-  .logo {
-    font-weight: bold;
-    font-size: 20px;
-  }
-  
-  .nav-items {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  
-  .nav-item {
-    cursor: pointer;
-  }
-  
-  .nav-item.active {
-    background-color: #86efac;
-    padding: 8px 16px;
-    border-radius: 8px;
-  }
-  
-  .profile-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background-color: #e5e7eb;
-  }
-  
-  /* Profile Section */
-  .profile-section {
-    margin-bottom: 16px;
-  }
-  
-  .profile-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 24px;
-  }
-  
-  .profile-icon-small {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background-color: #d1d5db;
-  }
-  
-  .profile-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-  }
-  
-  .profile-card {
-    background-color: white;
-    padding: 32px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Profile Picture Card */
-  .profile-picture {
-    width: 128px;
-    height: 128px;
-    border-radius: 50%;
-    background-color: #e5e7eb;
-    margin: 0 auto 16px;
-  }
-  
-  .profile-name {
-    font-size: 18px;
-    font-weight: 500;
-    text-align: center;
-    margin-bottom: 16px;
-  }
-  
-  .button-group {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-  }
-  
-  .btn-primary {
-    padding: 8px 16px;
-    background-color: #86efac;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-  }
-  
-  .btn-secondary {
-    padding: 8px 16px;
-    background-color: white;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  
-  /* Personal Information Card */
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-  }
-  
-  .card-header h2 {
-    font-size: 18px;
-    font-weight: 500;
-  }
-  
-  .edit-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: none;
-    border: none;
-    color: #4b5563;
-    cursor: pointer;
-  }
-  
-  .edit-icon {
-    width: 20px;
-    height: 20px;
-  }
-  
-  .personal-info {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-  
-  .info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-  }
-  
-  .info-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  
-  .info-label {
-    color: #6b7280;
-  }
-  
-  .info-value {
-    font-weight: 400;
-  }
+  padding: 24px;
+  background-color: white;
+  border-radius: 8px;
+}
+
+/* Navigation */
+.navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  padding: 16px;
+  background-color: white;
+  border-radius: 8px;
+}
+
+.logo {
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.nav-items {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-item {
+  cursor: pointer;
+}
+
+.nav-item.active {
+  background-color: #86efac;
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+
+.profile-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+}
+
+/* Profile Section */
+.profile-section {
+  margin-bottom: 16px;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.profile-icon-small {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #d1d5db;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.profile-card {
+  background-color: white;
+  padding: 32px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Profile Picture Card */
+.profile-picture {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+  margin: 0 auto 16px;
+  background-size: cover;
+  background-position: center;
+}
+
+.profile-name {
+  font-size: 18px;
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.btn-primary {
+  padding: 8px 16px;
+  background-color: #86efac;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  padding: 8px 16px;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Personal Information Card */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.card-header h2 {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.edit-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.edit-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.personal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  color: #6b7280;
+}
+
+.info-value {
+  font-weight: 400;
+}
+
+/* Modal styles for Edit Profile */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 8px;
+  width: 450px;
+  max-width: 90%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.modal-header h2 {
+  font-size: 16px;
+  margin: 0;
+  font-weight: 500;
+  color: #111827;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 24px;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Form styles */
+.modal-form-container {
+  padding: 24px;
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid #D9D9D9;
+  margin: 16px;
+}
+
+form {
+  width: 100%;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #86efac;
+}
+
+.disabled-input {
+  background-color: #f9fafb !important;
+  cursor: not-allowed;
+  color: #6b7280;
+}
+
+.modal-footer {
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.btn-cancel, .btn-save {
+  padding: 8px 0;
+  border-radius: 4px;
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+  flex: 1;
+}
+
+.btn-cancel {
+  background-color: white;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+}
+
+.btn-save {
+  background-color: #86efac;
+  color: #065f46;
+  border: none;
+}
+
+.btn-cancel:hover {
+  background-color: #f3f4f6;
+}
+
+.btn-save:hover {
+  background-color: #4ade80;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Error message */
+.error-message {
+  color: #ef4444;
+  margin-top: 8px;
+  font-size: 14px;
+}

@@ -89,8 +89,16 @@ nav {
   width: 32px;
   height: 32px;
   border-radius: 9999px;
-  background-color: #e5e7eb;
+  background-color: #e5e7eb; /* สีเทา default */
   cursor: pointer;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* เพิ่ม class ใหม่สำหรับ avatar ที่มีรูปโปรไฟล์ */
+.avatar-with-image {
+  background-color: transparent; /* ยกเลิกสีพื้นหลังเมื่อมีรูปภาพ */
 }
 
 /* Dropdown menu styles */
