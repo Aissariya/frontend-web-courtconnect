@@ -1,23 +1,40 @@
-import React, { useState,useRef, useEffect} from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import './FieldManagementPage.css';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate hook
 import AddCourtForm from './AddCourtForm';
+import CourtDetailsModal from './CourtDetailsModal';
 
 function CourtManagement() {
   const [showAddCourtForm, setShowAddCourtForm] = useState(false);
   const [selectedPage, setSelectedPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState(null);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const [selectedCourt, setSelectedCourt] = useState(null);
   const statusDropdownRef = useRef(null);
   
-  const handleViewDetails = (courtName) => {
+  const handleViewDetails = (court) => {
+    setSelectedCourt(court);
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedCourt(null);
+  };
+
+  const handleSaveStatus = (courtId, newStatus) => {
+    // Update court status in your data
+    const updatedCourts = courts.map(court => 
+      court.id === courtId ? { ...court, status: newStatus } : court
+    );
+    
+    // In a real app, you would update your state or make an API call here
+    console.log('Updated courts:', updatedCourts);
+    
     Swal.fire({
-      title: `${courtName} Details`,
-      text: `You are viewing details for ${courtName}`,
-      icon: 'info',
-      confirmButtonText: 'Close',
-      confirmButtonColor: '#A2F193',
+      title: 'Success!',
+      text: 'Court status has been updated successfully',
+      icon: 'success',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#A2F193'
     });
   };
 
@@ -30,7 +47,6 @@ function CourtManagement() {
     setIsStatusDropdownOpen(false);
   };
   
-  // Add navigation handler for Add Court button
   const handleAddCourt = () => {
     setShowAddCourtForm(true);
   };
@@ -60,7 +76,9 @@ function CourtManagement() {
       hours: '13:00 - 23:00', 
       capacity: '22', 
       bookingSlots: 'Hourly', 
-      status: 'Available'
+      status: 'Available',
+      days: ['Wed', 'Sat', 'Sun'],
+      price: '1,500'
     },
     { 
       id: 2, 
@@ -69,7 +87,9 @@ function CourtManagement() {
       hours: '09:00 - 18:00', 
       capacity: '12', 
       bookingSlots: 'Hourly', 
-      status: 'Available'
+      status: 'Available',
+      days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+      price: '1,200'
     },
     { 
       id: 3, 
@@ -78,7 +98,9 @@ function CourtManagement() {
       hours: '15:00 - 20:00', 
       capacity: '25', 
       bookingSlots: '30 minutes', 
-      status: 'Available'
+      status: 'Available',
+      days: ['Mon', 'Wed', 'Fri'],
+      price: '800'
     },
     { 
       id: 4, 
@@ -87,7 +109,9 @@ function CourtManagement() {
       hours: '17:30 - 23:30', 
       capacity: '22', 
       bookingSlots: 'Hourly', 
-      status: 'Available'
+      status: 'Available',
+      days: ['Tue', 'Thu', 'Sat', 'Sun'],
+      price: '1,000'
     },
     { 
       id: 5, 
@@ -96,7 +120,9 @@ function CourtManagement() {
       hours: '08:00 - 18:00', 
       capacity: '13', 
       bookingSlots: 'Hourly', 
-      status: 'Unavailable'
+      status: 'Unavailable',
+      days: ['Mon', 'Wed', 'Fri'],
+      price: '900'
     },
   ];
 
@@ -211,7 +237,7 @@ function CourtManagement() {
                   {court.status}
                 </div>
                 <div className="court-action">
-                  <button className="action-button" onClick={() => handleViewDetails(court.name)}>
+                  <button className="action-button" onClick={() => handleViewDetails(court)}>
                     Details
                   </button>
                 </div>
@@ -237,6 +263,14 @@ function CourtManagement() {
           </div>
         </div>
       </div>
+      
+      {selectedCourt && (
+        <CourtDetailsModal 
+          court={selectedCourt} 
+          onClose={handleCloseDetails} 
+          onSave={handleSaveStatus} 
+        />
+      )}
     </div>
   );
 }
