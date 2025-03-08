@@ -118,6 +118,10 @@ body {
 }
 
 .selection-dropdown {
+  position: relative;
+}
+
+.status-button {
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -129,6 +133,40 @@ body {
   background: #F9F9F9;
   border-radius: 10px;
   cursor: pointer;
+  border: none;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 24px;
+  color: rgba(54, 54, 54, 0.5);
+}
+
+.status-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #FFFFFF;
+  border: 1px solid #D9D9D9;
+  border-radius: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  overflow: hidden;
+}
+
+.status-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 10px 15px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 16px;
+  color: #363636;
+  cursor: pointer;
+}
+
+.status-dropdown button:hover {
+  background-color: #F9F9F9;
 }
 
 .selection-dropdown span {

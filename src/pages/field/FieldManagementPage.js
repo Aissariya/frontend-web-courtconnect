@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
-import ReactDOM from 'react-dom';
+import React, { useState,useRef, useEffect} from 'react';
 import Swal from 'sweetalert2';
-import { ShoppingBasketIcon as Basketball, List, ChevronLeft, ChevronRight } from 'lucide-react';
 import './FieldManagementPage.css';
-import AddCourtForm from "./AddCourtForm"
+import { useNavigate } from 'react-router-dom'; // Import useNavigate hook
+import AddCourtForm from './AddCourtForm';
 
 function CourtManagement() {
+  const [showAddCourtForm, setShowAddCourtForm] = useState(false);
   const [selectedPage, setSelectedPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState(null);
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const statusDropdownRef = useRef(null);
   
   const handleViewDetails = (courtName) => {
     Swal.fire({
@@ -17,6 +20,37 @@ function CourtManagement() {
       confirmButtonColor: '#A2F193',
     });
   };
+
+  const toggleStatusDropdown = () => {
+    setIsStatusDropdownOpen(!isStatusDropdownOpen);
+  };
+
+  const handleStatusFilter = (status) => {
+    setStatusFilter(status);
+    setIsStatusDropdownOpen(false);
+  };
+  
+  // Add navigation handler for Add Court button
+  const handleAddCourt = () => {
+    setShowAddCourtForm(true);
+  };
+
+  const handleBackFromAddCourt = () => {
+    setShowAddCourtForm(false);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target)) {
+        setIsStatusDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const courts = [
     { 
@@ -66,6 +100,16 @@ function CourtManagement() {
     },
   ];
 
+  const filteredCourts = statusFilter
+    ? courts.filter(court => court.status === statusFilter)
+    : courts;
+
+  // If showing add court form, render that component
+  if (showAddCourtForm) {
+    return <AddCourtForm onBack={handleBackFromAddCourt} />;
+  }
+
+  // Otherwise render the court management page
   return (
     <div className="court-management">
       <div className="filter-button">
@@ -77,7 +121,7 @@ function CourtManagement() {
         <span>Filter</span>
       </div>
       
-      <div className="dashboard-button">
+      <div className="dashboard-button" onClick={handleAddCourt}>
         <span>Add Court</span>
       </div>
       
@@ -96,11 +140,22 @@ function CourtManagement() {
             <span className="topic-text">My Court</span>
           </div>
           
-          <div className="selection-dropdown">
-            <span>Status</span>
-            <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M5.25 8.75L10.5 14L15.75 8.75" stroke="rgba(54, 54, 54, 0.5)" strokeWidth="2" />
-            </svg>
+          <div className="selection-dropdown" ref={statusDropdownRef}>
+            <button onClick={toggleStatusDropdown} className="status-button">
+              <span>Status</span>
+              <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5.25 8.75L10.5 14L15.75 8.75" stroke="rgba(54, 54, 54, 0.5)" strokeWidth="2" />
+              </svg>
+            </button>
+            {isStatusDropdownOpen && (
+              <div className="status-dropdown">
+                <button onClick={() => handleStatusFilter('Available')}>Available</button>
+                <button onClick={() => handleStatusFilter('Unavailable')}>Unavailable</button>
+                {statusFilter && (
+                  <button onClick={() => handleStatusFilter(null)}>Clear Filter</button>
+                )}
+              </div>
+            )}
           </div>
         </div>
         
@@ -142,7 +197,7 @@ function CourtManagement() {
           </div>
           
           <div className="table-body">
-            {courts.map(court => (
+            {filteredCourts.map(court => (
               <div className="table-row" key={court.id}>
                 <div className="court-info">
                   <div className="court-image"></div>
@@ -166,7 +221,7 @@ function CourtManagement() {
         </div>
         
         <div className="pagination">
-          <div className="pagination-text">Showing 1 to 5 of 5 entries</div>
+          <div className="pagination-text">Showing 1 to {filteredCourts.length} of {filteredCourts.length} entries</div>
           <div className="pagination-controls">
             <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg" className="chevron-left">
               <path d="M13 16L7 10.5L13 5" stroke="rgba(54, 54, 54, 0.5)" strokeWidth="2" />
