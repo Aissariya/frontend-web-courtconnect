@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Pencil, User } from 'lucide-react'; // เพิ่ม import User icon
+import { Pencil, User } from 'lucide-react';
 import './Profile.css';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import EditProfile from './EditProfile';
+import Transactions from './Transactions';
 
 const Profile = () => {
   // State to store user profile data
@@ -183,7 +184,6 @@ const Profile = () => {
       {/* Profile Section */}
       <div className="profile-section">
         <div className="profile-header">
-          {/* ใช้ไอคอน User เท่านั้น ไม่ดึงรูปโปรไฟล์มาแสดง */}
           <div className="profile-icon-small">
             <User size={24} color="#6b7280" />
           </div>
@@ -247,6 +247,9 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {/* Transactions Section */}
+      <Transactions />
 
       {/* Edit Profile Modal */}
       <EditProfile 

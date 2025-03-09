@@ -260,7 +260,7 @@ const RevenuePieChart = ({
           <div className="chart-error">{error}</div>
         ) : chartData.length === 0 ? (
           <div className="no-data-message">
-            ไม่มีข้อมูลสำหรับตัวกรองที่เลือก
+            No Data
           </div>
         ) : (
           <>
