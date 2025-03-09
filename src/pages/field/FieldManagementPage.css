@@ -2,7 +2,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 body {
@@ -16,7 +16,7 @@ body {
   padding: 20px;
 }
 
-.filter-button {
+.filter-buttonkr {
   box-sizing: border-box;
   display: flex;
   flex-direction: row;
@@ -28,13 +28,13 @@ body {
   height: 44px;
   left: 41px;
   top: 147px;
-  border: 1px solid #D9D9D9;
+  border: 1px solid #d9d9d9;
   border-radius: 10px;
   cursor: pointer;
   background-color: #fff;
 }
 
-.filter-button span {
+.filter-buttonkr span {
   width: 49px;
   height: 24px;
   font-style: normal;
@@ -56,7 +56,7 @@ body {
   height: 44px;
   right: 41px;
   top: 147px;
-  background: #A2F193;
+  background: #a2f193;
   border-radius: 10px;
   cursor: pointer;
 }
@@ -71,20 +71,20 @@ body {
   color: #137400;
 }
 
-.main-container {
+.main-containerkr {
   position: absolute;
   width: calc(100% - 82px);
   max-width: 1647px;
   height: 794px;
   left: 41px;
   top: 256px;
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 15px;
   padding: 30px;
   overflow: hidden;
 }
 
-.header-section {
+.header-sectionkr {
   display: flex;
   justify-content: space-between;
   width: 100%;
@@ -127,10 +127,10 @@ body {
   justify-content: center;
   align-items: center;
   padding: 10px 15px;
-  gap: 20px;
+  gap: 10px;
   width: 132px;
   height: 44px;
-  background: #F9F9F9;
+  background: #f9f9f9;
   border-radius: 10px;
   cursor: pointer;
   border: none;
@@ -145,8 +145,8 @@ body {
   position: absolute;
   top: 100%;
   right: 0;
-  background: #FFFFFF;
-  border: 1px solid #D9D9D9;
+  background: #ffffff;
+  border: 1px solid #d9d9d9;
   border-radius: 10px;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   z-index: 10;
@@ -166,7 +166,7 @@ body {
 }
 
 .status-dropdown button:hover {
-  background-color: #F9F9F9;
+  background-color: #f9f9f9;
 }
 
 .selection-dropdown span {
@@ -178,7 +178,7 @@ body {
   color: rgba(54, 54, 54, 0.5);
 }
 
-.table-container {
+.table-containerkr {
   width: 100%;
   height: calc(100% - 150px);
   overflow-y: auto;
@@ -187,7 +187,7 @@ body {
 .table-header {
   width: 100%;
   height: 71px;
-  background: #F9F9F9;
+  background: #f9f9f9;
   border-radius: 15px;
   display: flex;
   align-items: center;
@@ -238,7 +238,7 @@ body {
   display: flex;
   align-items: center;
   padding: 0 20px;
-  border-bottom: 1px dashed #F9F9F9;
+  border-bottom: 1px dashed #f9f9f9;
 }
 
 .court-info {
@@ -253,7 +253,7 @@ body {
 .court-image {
   width: 59px;
   height: 59px;
-  background: #D9D9D9;
+  background: #d9d9d9;
   border-radius: 10px;
 }
 
@@ -297,13 +297,13 @@ body {
 }
 
 .court-status.available {
-  background: #EFF6EF;
-  color: #3D8639;
+  background: #eff6ef;
+  color: #3d8639;
 }
 
 .court-status.unavailable {
-  background: #FAF1F1;
-  color: #C84D48;
+  background: #faf1f1;
+  color: #c84d48;
 }
 
 .court-action {
@@ -321,7 +321,7 @@ body {
   padding: 10px 15px;
   width: 96px;
   height: 44px;
-  border: 1px solid #D9D9D9;
+  border: 1px solid #d9d9d9;
   border-radius: 10px;
   font-style: normal;
   font-weight: 500;
@@ -332,26 +332,27 @@ body {
   cursor: pointer;
 }
 
-.pagination {
+.paginationkr {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
+  width: calc(100% - 60px);
   position: absolute;
   bottom: 30px;
-  left: 0;
-  padding: 0 30px;
+  left: 30px;
+  right: 30px;
 }
 
-.pagination-text {
+.pagination-textkr {
   font-style: normal;
   font-weight: 500;
   font-size: 18px;
   line-height: 22px;
   color: rgba(54, 54, 54, 0.5);
+  white-space: nowrap;
 }
 
-.pagination-controls {
+.pagination-controlskr {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -369,39 +370,40 @@ body {
   font-size: 20px;
   line-height: 24px;
   color: rgba(54, 54, 54, 0.5);
-  background: #FAFAFA;
+  background: #fafafa;
   cursor: pointer;
 }
 
 .page-number.active {
-  background: #D9D9D9;
+  background: #d9d9d9;
   color: #363636;
 }
 
-.chevron-left, .chevron-right {
+.chevron-left,
+.chevron-right {
   cursor: pointer;
 }
 
 @media (max-width: 1200px) {
-  .main-container {
+  .main-containerkr {
     width: calc(100% - 40px);
     left: 20px;
     height: auto;
     min-height: 700px;
   }
-  
-  .filter-button {
+
+  .filter-buttonkr {
     left: 20px;
   }
-  
+
   .dashboard-button {
     right: 20px;
   }
-  
+
   .court-service {
     display: none;
   }
-  
+
   .header-cell:nth-child(5) {
     display: none;
   }
@@ -411,9 +413,22 @@ body {
   .court-capacity {
     display: none;
   }
-  
+
   .header-cell:nth-child(4) {
     display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .paginationkr {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+
+  .pagination-controlskr {
+    width: 100%;
+    justify-content: center;
   }
 }
 
@@ -421,24 +436,25 @@ body {
   .court-hours {
     display: none;
   }
-  
+
   .header-cell:nth-child(3) {
     display: none;
   }
-  
+
   .table-row {
     flex-wrap: wrap;
     height: auto;
     padding: 15px;
   }
-  
+
   .court-info {
     width: 100%;
     margin-bottom: 10px;
   }
-  
-  .pagination {
+
+  .paginationkr {
     flex-direction: column;
     gap: 15px;
   }
 }
+
