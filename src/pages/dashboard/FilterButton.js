@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { SlidersHorizontal, Check, ChevronDown, X } from 'lucide-react';
 import './FilterButton.css';
-import { collection, getDocs, getFirestore, query, where } from 'firebase/firestore';
+import { collection, getDocs, getFirestore, query, where, doc, getDoc } from 'firebase/firestore';
+import useAuth from '../../hooks/useAuth'; // เพิ่ม import สำหรับ useAuth hook
 
 const FilterButton = ({ onApplyFilters }) => {
   const [showPanel, setShowPanel] = useState(false);
@@ -16,60 +17,103 @@ const FilterButton = ({ onApplyFilters }) => {
   const [availableCourtTypes, setAvailableCourtTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   
+  // ใช้ useAuth hook เพื่อดึงข้อมูลผู้ใช้ที่ล็อกอินอยู่
+  const { user } = useAuth();
+  
   // ดึงข้อมูลจาก Firebase เมื่อ component ถูกโหลด
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
+        if (!user) {
+          console.log('No user found in FilterButton');
+          setLoading(false);
+          return;
+        }
+        
         setLoading(true);
         const db = getFirestore();
         
-        // 1. ดึงข้อมูลการจองทั้งหมดโดยกรองเฉพาะของ user ปัจจุบัน
-        const bookingsCollection = collection(db, 'Booking');
-        const bookingsQuery = query(
-          bookingsCollection,
-          where('user_id', '==', 'USR0001') // ใช้ user_id ที่ login อยู่
+        // ดึงข้อมูล user จาก users collection
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        
+        if (!userDocSnap.exists()) {
+          console.log('User document not found');
+          setLoading(false);
+          return;
+        }
+        
+        const userData = userDocSnap.data();
+        const userIdForQuery = userData.user_id;
+        
+        console.log('Using user_id for filter query:', userIdForQuery);
+        
+        // วิธีที่ 1: ดึงสนามโดยตรงที่มี user_id ตรงกับผู้ใช้
+        const courtsCollection = collection(db, 'Court');
+        const userCourtsQuery = query(
+          courtsCollection,
+          where('user_id', '==', userIdForQuery)
         );
         
-        const bookingsSnapshot = await getDocs(bookingsQuery);
+        const courtsSnapshot = await getDocs(userCourtsQuery);
         
-        // สร้าง Set ของ court_id จากการจองเพื่อลดความซ้ำซ้อน
-        const courtIds = new Set();
-        bookingsSnapshot.forEach(doc => {
-          const booking = doc.data();
-          if (booking.court_id) {
-            courtIds.add(booking.court_id);
-          }
-        });
+        console.log('Found courts for user:', courtsSnapshot.size);
         
-        // 2. ดึงข้อมูลสนามทั้งหมด
-        const courtsCollection = collection(db, 'Court');
-        const courtsSnapshot = await getDocs(courtsCollection);
-        
-        // เก็บค่า unique ของ field และ court_type เฉพาะจากสนามที่มีการจอง
+        // เก็บค่า unique ของ field และ court_type
         const fields = new Set();
         const courtTypes = new Set();
         
         courtsSnapshot.forEach((doc) => {
           const court = doc.data();
-          
-          // ถ้าเลือกแสดงเฉพาะสนามที่มีการจอง
-          // if (courtIds.has(court.court_id)) {
-          //   if (court.field) fields.add(court.field);
-          //   if (court.court_type) courtTypes.add(court.court_type);
-          // }
-          
-          // หรือถ้าต้องการแสดงทุกสนาม
           if (court.field) fields.add(court.field);
           if (court.court_type) courtTypes.add(court.court_type);
         });
+        
+        // ถ้าไม่พบสนามจากการค้นหาโดยตรง ให้ลองวิธีที่ 2
+        if (fields.size === 0) {
+          console.log('No courts found directly, trying bookings method...');
+          
+          // วิธีที่ 2: ดึงการจองแล้วหาสนามที่เกี่ยวข้อง
+          const bookingsCollection = collection(db, 'Booking');
+          const bookingsQuery = query(
+            bookingsCollection,
+            where('user_id', '==', userIdForQuery)
+          );
+          
+          const bookingsSnapshot = await getDocs(bookingsQuery);
+          
+          // สร้าง Set ของ court_id จากการจอง
+          const courtIds = new Set();
+          bookingsSnapshot.forEach(doc => {
+            const booking = doc.data();
+            if (booking.court_id) {
+              courtIds.add(booking.court_id);
+            }
+          });
+          
+          console.log('Found court IDs from bookings:', Array.from(courtIds));
+          
+          // ดึงข้อมูลสนามทั้งหมด
+          const allCourtsSnapshot = await getDocs(collection(db, 'Court'));
+          
+          allCourtsSnapshot.forEach((doc) => {
+            const court = doc.data();
+            
+            // แสดงเฉพาะสนามที่มีการจองโดยผู้ใช้ปัจจุบัน
+            if (courtIds.has(court.court_id)) {
+              if (court.field) fields.add(court.field);
+              if (court.court_type) courtTypes.add(court.court_type);
+            }
+          });
+        }
         
         // แปลง Set เป็น Array และเรียงลำดับตามตัวอักษร
         setAvailableFields(Array.from(fields).sort());
         setAvailableCourtTypes(Array.from(courtTypes).sort());
         setLoading(false);
         
-        console.log("Available fields:", Array.from(fields));
-        console.log("Available court types:", Array.from(courtTypes));
+        console.log("Available fields for current user:", Array.from(fields));
+        console.log("Available court types for current user:", Array.from(courtTypes));
       } catch (error) {
         console.error('Error fetching filter options:', error);
         setLoading(false);
@@ -77,7 +121,7 @@ const FilterButton = ({ onApplyFilters }) => {
     };
     
     fetchFilterOptions();
-  }, []);
+  }, [user]); // เพิ่ม user เป็น dependency
   
   const togglePanel = () => {
     setShowPanel(!showPanel);
