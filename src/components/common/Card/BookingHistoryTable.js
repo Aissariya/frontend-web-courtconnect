@@ -185,45 +185,23 @@ const BookingHistoryTable = () => {
   // กำหนด class สำหรับสถานะการจอง
   const getStatusClass = (status) => {
     switch (status.toLowerCase()) {
+      case 'successful':
+      case 'completed':
+      case 'approved':
       case 'สำเร็จ':
       case 'เสร็จสิ้น':
       case 'อนุมัติ':
-      case 'successful':
-      case 'completed':
-      case 'approved':
         return 'status-successful';
+      case 'cancelled':
+      case 'rejected':
       case 'ยกเลิก':
       case 'ปฏิเสธ':
-      case 'cancelled':
-      case 'rejected':
         return 'status-cancelled';
-      case 'Pending':
-      case 'รออนุมัติ':
       case 'pending':
       case 'waiting':
+      case 'รออนุมัติ':
       default:
         return 'status-pending';
-    }
-  };
-
-  // แปลงสถานะเป็นภาษาไทย (ถ้าจำเป็น)
-  const translateStatus = (status) => {
-    if (!status) return 'Pending';
-    
-    // ถ้าเป็นภาษาอังกฤษ ให้แปลเป็นภาษาไทย
-    switch (status.toLowerCase()) {
-      case 'successful':
-      case 'completed':
-      case 'approved':
-        return 'สำเร็จ';
-      case 'cancelled':
-      case 'rejected':
-        return 'ยกเลิก';
-      case 'pending':
-      case 'waiting':
-        return 'Pending';
-      default:
-        return status; // ถ้าเป็นภาษาไทยหรืออื่นๆ ให้ใช้ค่าเดิม
     }
   };
 
@@ -291,7 +269,7 @@ const BookingHistoryTable = () => {
                           <td>{courtInfo.type || '-'}</td>
                           <td>
                             <span className={`status-badge ${getStatusClass(booking.status)}`}>
-                              {translateStatus(booking.status)}
+                              {booking.status || 'Pending'}
                             </span>
                           </td>
                         </tr>
