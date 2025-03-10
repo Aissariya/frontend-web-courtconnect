@@ -10,7 +10,9 @@ const RevenueChart = ({
   selectedMonth = new Date().getMonth(), 
   selectedYear = new Date().getFullYear(),
   previousMonth,
-  previousYear
+  previousYear,
+  selectedFields = [],
+  selectedCourtTypes = []
 }) => {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -29,6 +31,13 @@ const RevenueChart = ({
       }
 
       console.log('Fetching data for user:', user.uid);
+      console.log('Filter settings:', { 
+        filterPeriod, 
+        selectedMonth, 
+        selectedYear, 
+        selectedFields, 
+        selectedCourtTypes 
+      });
       
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
@@ -44,6 +53,20 @@ const RevenueChart = ({
       const userIdForQuery = userData.user_id;
       console.log('Using user_id for query:', userIdForQuery);
 
+      // ดึงข้อมูล Courts ทั้งหมดก่อนเพื่อใช้กรอง
+      const courtsRef = collection(db, 'Court');
+      const courtsSnapshot = await getDocs(courtsRef);
+      
+      // สร้าง Map ของข้อมูล Court
+      const courtsMap = {};
+      courtsSnapshot.forEach(doc => {
+        const court = doc.data();
+        courtsMap[court.court_id] = court;
+      });
+      
+      console.log('Fetched courts:', Object.keys(courtsMap).length);
+
+      // ดึงข้อมูลการจอง
       const bookingsRef = collection(db, 'Booking');
       const userBookingsQuery = query(
         bookingsRef,
@@ -57,16 +80,48 @@ const RevenueChart = ({
       if (bookingSnapshots.size === 0) {
         console.log('No bookings found');
         setData([]);
+        setFilteredData([]);
+        setLoading(false);
+        return;
+      }
+
+      // กรองข้อมูลตาม selectedFields และ selectedCourtTypes
+      const filteredBookings = [];
+      
+      for (const docSnapshot of bookingSnapshots.docs) {
+        const booking = docSnapshot.data();
+        const courtId = booking.court_id;
+        const court = courtsMap[courtId];
+        
+        // ถ้าไม่พบข้อมูล court หรือไม่ตรงกับเงื่อนไขกรอง ให้ข้าม
+        if (!court) {
+          console.log('Court not found for booking:', courtId);
+          continue;
+        }
+        
+        // กรองตาม field และ court type
+        const fieldMatch = selectedFields.length === 0 || selectedFields.includes(court.field);
+        const courtTypeMatch = selectedCourtTypes.length === 0 || selectedCourtTypes.includes(court.court_type);
+        
+        if (fieldMatch && courtTypeMatch) {
+          filteredBookings.push(booking);
+        }
+      }
+      
+      console.log('Bookings after filtering by fields/court types:', filteredBookings.length);
+      
+      // ถ้าไม่มีข้อมูลหลังการกรอง ให้แสดงข้อมูลว่าง
+      if (filteredBookings.length === 0) {
+        console.log('No bookings after filtering');
+        setData([]);
+        setFilteredData([]);
         setLoading(false);
         return;
       }
 
       const revenueByDate = new Map();
 
-      for (const docSnapshot of bookingSnapshots.docs) {
-        const booking = docSnapshot.data();
-        console.log('Processing booking:', booking);
-
+      for (const booking of filteredBookings) {
         const startTimestamp = booking.start_time;
         const date = new Date(startTimestamp.seconds * 1000);
 
@@ -76,17 +131,11 @@ const RevenueChart = ({
         }
 
         try {
-          const courtsRef = collection(db, 'Court');
-          const courtQuery = query(courtsRef, where('court_id', '==', booking.court_id));
-          const courtSnapshot = await getDocs(courtQuery);
-          
-          if (courtSnapshot.empty) {
-            console.log('Court not found:', booking.court_id);
+          const courtData = courtsMap[booking.court_id];
+          if (!courtData) {
+            console.log('Court not found in map:', booking.court_id);
             continue;
           }
-          
-          const courtData = courtSnapshot.docs[0].data();
-          console.log('Court data:', courtData);
 
           const startTime = new Date(booking.start_time.seconds * 1000).getTime();
           const endTime = new Date(booking.end_time.seconds * 1000).getTime();
@@ -100,13 +149,9 @@ const RevenueChart = ({
           const slots = Math.ceil(durationInMinutes / courtData.bookingslot);
           const price = slots * courtData.priceslot;
 
-          console.log('Calculated price:', price);
-
           const dateKey = date.toISOString().split('T')[0];
           const currentRevenue = (revenueByDate.get(dateKey) || 0) + price;
           revenueByDate.set(dateKey, currentRevenue);
-
-          console.log(`Revenue for ${dateKey}:`, currentRevenue);
         } catch (err) {
           console.error('Error processing court data:', err);
         }
@@ -120,7 +165,7 @@ const RevenueChart = ({
         }))
         .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-      console.log('Final raw data:', rawData);
+      console.log('Final raw data:', rawData.length, 'date entries');
       setData(rawData);
       setLoading(false);
     } catch (err) {
@@ -137,6 +182,13 @@ const RevenueChart = ({
     // ถ้าไม่ได้รับค่า previousMonth/previousYear ให้คำนวณจาก selectedMonth/selectedYear
     const prevMonth = previousMonth !== undefined ? previousMonth : (selectedMonth === 0 ? 11 : selectedMonth - 1);
     const prevYear = previousYear !== undefined ? previousYear : (selectedMonth === 0 ? selectedYear - 1 : selectedYear);
+
+    console.log(`Filtering data by period: ${period}`, {
+      selectedMonth,
+      selectedYear,
+      prevMonth,
+      prevYear
+    });
 
     switch (period) {
       case 'daily': {
@@ -252,10 +304,16 @@ const RevenueChart = ({
         break;
     }
 
+    console.log('Filtered data for chart:', filteredData.length, 'entries');
     return filteredData;
   };
 
+  // รีเซ็ตข้อมูลและเรียกดึงข้อมูลใหม่เมื่อตัวกรองเปลี่ยน
   useEffect(() => {
+    // รีเซ็ตข้อมูลเมื่อเปลี่ยนตัวกรอง
+    setData([]);
+    setFilteredData([]);
+    
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         fetchRevenueData(user);
@@ -266,21 +324,31 @@ const RevenueChart = ({
     });
 
     return () => unsubscribe();
-  }, [auth]);
+  }, [auth, selectedFields, selectedCourtTypes, selectedMonth, selectedYear]); // เพิ่ม dependencies ทั้งหมด
 
+  // อัพเดท filteredData เมื่อ data หรือ filterPeriod เปลี่ยน
   useEffect(() => {
     if (data.length > 0) {
       const filtered = filterData(data, filterPeriod);
       setFilteredData(filtered);
+    } else {
+      setFilteredData([]);
     }
   }, [data, filterPeriod, selectedMonth, selectedYear, previousMonth, previousYear]);
 
+  // ตรวจสอบว่ามีข้อมูลเพื่อแสดงหรือไม่
+  const hasData = filteredData.length > 0 && !filteredData.every(item => item.current === 0 && item.previous === 0);
+
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="chart-card"><div className="chart-content">Loading...</div></div>;
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return <div className="chart-card"><div className="chart-content">Error: {error}</div></div>;
+  }
+
+  if (!hasData) {
+    return <div className="chart-card"><div className="chart-content">No Data Available</div></div>;
   }
 
   return (

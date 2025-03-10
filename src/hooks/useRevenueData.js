@@ -8,8 +8,10 @@ import { db } from '../firebaseConfig';
  * @param {number} selectedMonth - เดือนที่เลือก (0-11)
  * @param {number} selectedYear - ปีที่เลือก
  * @param {string} filterPeriod - ช่วงเวลาที่ต้องการ ('monthly' หรือ 'yearly')
+ * @param {Array} selectedFields - สนามที่เลือกกรอง
+ * @param {Array} selectedCourtTypes - ประเภทสนามที่เลือกกรอง
  */
-const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'monthly') => {
+const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'monthly', selectedFields = [], selectedCourtTypes = []) => {
   const [metrics, setMetrics] = useState([
     { title: 'Revenue', value: '฿0.00', change: 0 },
     { title: 'Total Bookings', value: '0', change: 0 },
@@ -99,6 +101,8 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
         }
 
         console.log(`Fetching revenue data for user: ${user.uid}, period: ${filterPeriod}`);
+        console.log('Selected fields:', selectedFields);
+        console.log('Selected court types:', selectedCourtTypes);
         
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
@@ -136,9 +140,50 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
 
         // รวบรวมการจองทั้งหมด
         const allBookings = [];
-        for (const docSnapshot of bookingSnapshots.docs) {
-          const booking = docSnapshot.data();
-          allBookings.push(booking);
+        
+        // ตรวจสอบว่ามีการกรองด้วย fields หรือ court types หรือไม่
+        if (selectedFields.length > 0 || selectedCourtTypes.length > 0) {
+          console.log('Filtering by fields:', selectedFields);
+          console.log('Filtering by court types:', selectedCourtTypes);
+          
+          // ดึงข้อมูล Court ทั้งหมดก่อน
+          const courtsRef = collection(db, 'Court');
+          const courtsSnapshot = await getDocs(courtsRef);
+          
+          // สร้าง Map ของข้อมูล Court โดยใช้ court_id เป็น key
+          const courtsMap = {};
+          courtsSnapshot.forEach(doc => {
+            const court = doc.data();
+            courtsMap[court.court_id] = court;
+          });
+          
+          console.log('Courts map created with', Object.keys(courtsMap).length, 'courts');
+          
+          // กรองการจองตามเงื่อนไขที่เลือก
+          for (const docSnapshot of bookingSnapshots.docs) {
+            const booking = docSnapshot.data();
+            const court = courtsMap[booking.court_id];
+            
+            if (!court) {
+              console.log('Court not found for booking:', booking.court_id);
+              continue; // ข้ามถ้าไม่พบข้อมูล Court
+            }
+            
+            const fieldMatch = selectedFields.length === 0 || selectedFields.includes(court.field);
+            const courtTypeMatch = selectedCourtTypes.length === 0 || selectedCourtTypes.includes(court.court_type);
+            
+            if (fieldMatch && courtTypeMatch) {
+              allBookings.push(booking);
+            }
+          }
+          
+          console.log('After filtering, found', allBookings.length, 'bookings that match criteria');
+        } else {
+          // ถ้าไม่มีการกรอง ให้ใช้ข้อมูลทั้งหมด
+          for (const docSnapshot of bookingSnapshots.docs) {
+            allBookings.push(docSnapshot.data());
+          }
+          console.log('No filters applied, using all', allBookings.length, 'bookings');
         }
 
         // กรองข้อมูลตาม filterPeriod
@@ -301,7 +346,7 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
     };
 
     fetchRevenueData();
-  }, [user, selectedMonth, selectedYear, filterPeriod]);
+  }, [user, selectedMonth, selectedYear, filterPeriod, selectedFields, selectedCourtTypes]); // เพิ่ม selectedFields และ selectedCourtTypes เป็น dependencies
 
   return { metrics, loading, error };
 };
