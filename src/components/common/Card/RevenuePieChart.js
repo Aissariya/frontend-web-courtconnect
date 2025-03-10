@@ -51,6 +51,15 @@ const RevenuePieChart = ({
         return;
       }
 
+      console.log('Revenue Pie Chart - Filter settings:', { 
+        filterPeriod, 
+        selectedMonth, 
+        selectedYear, 
+        selectedFields, 
+        selectedCourtTypes,
+        chartType
+      });
+
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
       
@@ -63,6 +72,19 @@ const RevenuePieChart = ({
       const userData = userDoc.data();
       const userIdForQuery = userData.user_id;
 
+      // ดึงข้อมูล Courts ทั้งหมดก่อนเพื่อใช้เป็นการเทียบ
+      const courtsRef = collection(db, 'Court');
+      const courtsSnapshot = await getDocs(courtsRef);
+      
+      // สร้าง Map ของข้อมูล Court
+      const courtsMap = {};
+      courtsSnapshot.forEach(doc => {
+        const court = doc.data();
+        courtsMap[court.court_id] = court;
+      });
+      
+      console.log('Revenue Pie Chart - Fetched courts:', Object.keys(courtsMap).length);
+
       const bookingsRef = collection(db, 'Booking');
       const userBookingsQuery = query(
         bookingsRef,
@@ -71,8 +93,10 @@ const RevenuePieChart = ({
       );
 
       const bookingSnapshots = await getDocs(userBookingsQuery);
+      console.log('Revenue Pie Chart - Found bookings:', bookingSnapshots.size);
 
       if (bookingSnapshots.empty) {
+        console.log('Revenue Pie Chart - No bookings found');
         setChartData([]);
         setLoading(false);
         return;
@@ -83,34 +107,38 @@ const RevenuePieChart = ({
 
       for (const docSnapshot of bookingSnapshots.docs) {
         const booking = docSnapshot.data();
-
-        const courtsRef = collection(db, 'Court');
-        const courtQuery = query(courtsRef, where('court_id', '==', booking.court_id));
-        const courtSnapshot = await getDocs(courtQuery);
+        const courtId = booking.court_id;
+        const court = courtsMap[courtId];
         
-        if (courtSnapshot.empty) continue;
-        
-        const courtData = courtSnapshot.docs[0].data();
+        if (!court) {
+          console.log('Revenue Pie Chart - Court not found for booking:', courtId);
+          continue;
+        }
 
         const startTime = new Date(booking.start_time.seconds * 1000);
         const endTime = new Date(booking.end_time.seconds * 1000);
         const durationInMinutes = (endTime - startTime) / (1000 * 60);
         
-        if (!courtData.bookingslot || !courtData.priceslot) continue;
+        if (!court.bookingslot || !court.priceslot) {
+          console.log('Revenue Pie Chart - Invalid court data:', court);
+          continue;
+        }
 
-        const slots = Math.ceil(durationInMinutes / courtData.bookingslot);
-        const price = slots * courtData.priceslot;
+        const slots = Math.ceil(durationInMinutes / court.bookingslot);
+        const price = slots * court.priceslot;
 
         // เก็บข้อมูลทั้งหมดพร้อมกับข้อมูลเกี่ยวกับวันที่และ court
         rawBookings.push({
           startTime,
           price,
-          field: courtData.field || 'Unknown',
-          court_type: courtData.court_type || 'Unknown',
+          field: court.field || 'Unknown',
+          court_type: court.court_type || 'Unknown',
           month: startTime.getMonth(),
           year: startTime.getFullYear()
         });
       }
+
+      console.log('Revenue Pie Chart - Raw bookings:', rawBookings.length);
 
       // ประมวลผลข้อมูลตามตัวกรองที่เลือก
       let filteredBookings = [];
@@ -129,12 +157,24 @@ const RevenuePieChart = ({
         );
       }
 
+      console.log('Revenue Pie Chart - After period filtering:', filteredBookings.length);
+
       // กรองตาม field และ court type ถ้ามีการเลือก
       const filteredByFieldAndType = filteredBookings.filter(booking => {
         const fieldMatch = selectedFields.length === 0 || selectedFields.includes(booking.field);
         const typeMatch = selectedCourtTypes.length === 0 || selectedCourtTypes.includes(booking.court_type);
         return fieldMatch && typeMatch;
       });
+
+      console.log('Revenue Pie Chart - After field/type filtering:', filteredByFieldAndType.length);
+
+      // ถ้าไม่มีข้อมูลหลังการกรอง ให้แสดงข้อมูลว่าง
+      if (filteredByFieldAndType.length === 0) {
+        console.log('Revenue Pie Chart - No data after filtering');
+        setChartData([]);
+        setLoading(false);
+        return;
+      }
 
       // จัดกลุ่มตาม chartType ไม่ว่า filterPeriod จะเป็นอะไร
       const processedData = {};
@@ -160,12 +200,7 @@ const RevenuePieChart = ({
         percentage: parseFloat(((item.value / totalValue) * 100).toFixed(1))
       }));
 
-      console.log('Chart Type:', chartType);
-      console.log('Filter Period:', filterPeriod);
-      console.log('Revenue Data:', processedData);
-      console.log('Formatted Pie Chart Data:', percentageData);
-      console.log('Total Value:', totalValue);
-
+      console.log('Revenue Pie Chart - Final data:', percentageData.length, 'entries');
       setChartData(percentageData);
       setLoading(false);
     } catch (err) {
@@ -175,7 +210,11 @@ const RevenuePieChart = ({
     }
   };
 
+  // รีเซ็ตข้อมูลและเรียกดึงข้อมูลใหม่เมื่อตัวกรองเปลี่ยน
   useEffect(() => {
+    // รีเซ็ตข้อมูลเมื่อเปลี่ยนตัวกรอง
+    setChartData([]);
+    
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         fetchRevenueData(user);
@@ -249,8 +288,6 @@ const RevenuePieChart = ({
     );
   };
 
-  // ไม่มีการใช้ฟังก์ชัน getChartTitle อีกต่อไป
-
   return (
     <div className="revenue-pie-chart">
       <div className="pie-chart-container">
@@ -264,7 +301,6 @@ const RevenuePieChart = ({
           </div>
         ) : (
           <>
-
             <div className="pie-container">
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
