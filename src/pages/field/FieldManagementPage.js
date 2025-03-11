@@ -3,235 +3,7 @@ import Swal from 'sweetalert2';
 import './FieldManagementPage.css';
 import AddCourtForm from './AddCourtForm';
 import CourtDetailsModal from './CourtDetailsModal';
-
-// Add these styles to your existing CSS file or include them here
-const additionalStyles = `
-.table-header {
-  width: 100%;
-  height: 71px;
-  background: #F9F9F9;
-  border-radius: 15px;
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  margin-bottom: 20px;
-}
-
-.header-cell {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  padding: 5px 10px;
-  gap: 10px;
-  height: 34px;
-  flex: 1;
-  width: calc(100% / 7); /* Equal width for all 7 columns */
-  justify-content: flex-start; /* Align content to the left */
-}
-
-.header-cell:last-child {
-  justify-content: center; /* Center the Action column */
-}
-
-.header-cell span {
-  font-style: normal;
-  font-weight: 600;
-  font-size: 20px;
-  line-height: 24px;
-  color: #363636;
-  white-space: nowrap; /* Prevent text wrapping */
-}
-
-.with-sort {
-  display: flex;
-  align-items: center;
-}
-
-.sort-icon {
-  width: 20.51px;
-  height: 21.76px;
-  padding: 3px 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 5px;
-}
-
-.table-body {
-  width: 100%;
-}
-
-.table-row {
-  width: 100%;
-  height: 103px;
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  border-bottom: 1px dashed #F9F9F9;
-}
-
-.court-info {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  padding: 0px;
-  gap: 15px;
-  flex: 1;
-  width: calc(100% / 7); /* Equal width for all 7 columns */
-}
-
-.court-image {
-  width: 59px;
-  height: 59px;
-  background: #D9D9D9;
-  border-radius: 10px;
-  flex-shrink: 0; /* Prevent image from shrinking */
-}
-
-.court-name {
-  font-style: normal;
-  font-weight: 400;
-  font-size: 20px;
-  line-height: 24px;
-  color: #363636;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.court-type,
-.court-hours,
-.court-capacity,
-.court-booking-slots {
-  flex: 1;
-  width: calc(100% / 7); /* Equal width for all 7 columns */
-  font-style: normal;
-  font-weight: 400;
-  font-size: 20px;
-  line-height: 24px;
-  color: #363636;
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 0 10px;
-}
-
-.court-status {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  padding: 5px 15px;
-  gap: 10px;
-  height: 34px;
-  border-radius: 10px;
-  font-style: normal;
-  font-weight: 400;
-  font-size: 20px;
-  line-height: 24px;
-  flex: 1;
-  width: calc(100% / 7); /* Equal width for all 7 columns */
-  white-space: nowrap;
-}
-
-.court-status.available {
-  background: #EFF6EF;
-  color: #3D8639;
-}
-
-.court-status.unavailable {
-  background: #FAF1F1;
-  color: #C84D48;
-}
-
-.court-action {
-  flex: 1;
-  width: calc(100% / 7); /* Equal width for all 7 columns */
-  display: flex;
-  justify-content: center;
-}
-
-.action-button {
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  padding: 10px 15px;
-  width: 96px;
-  height: 44px;
-  border: 1px solid #D9D9D9;
-  border-radius: 10px;
-  font-style: normal;
-  font-weight: 500;
-  font-size: 20px;
-  line-height: 24px;
-  color: #363636;
-  background: none;
-  cursor: pointer;
-}
-
-.status-button {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  padding: 10px 15px;
-  gap: 10px;
-  width: 132px;
-  height: 44px;
-  background: #F9F9F9;
-  border-radius: 10px;
-  cursor: pointer;
-  border: none;
-  font-style: normal;
-  font-weight: 400;
-  font-size: 20px;
-  line-height: 24px;
-  color: rgba(54, 54, 54, 0.5);
-}
-
-.paginationkr {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: calc(100% - 60px);
-  position: absolute;
-  bottom: 30px;
-  left: 30px;
-  right: 30px;
-}
-
-.pagination-textkr {
-  font-style: normal;
-  font-weight: 500;
-  font-size: 18px;
-  line-height: 22px;
-  color: rgba(54, 54, 54, 0.5);
-  white-space: nowrap;
-}
-
-.pagination-controlskr {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-@media (max-width: 768px) {
-  .paginationkr {
-    flex-direction: column;
-    gap: 15px;
-    align-items: flex-start;
-  }
-  
-  .pagination-controlskr {
-    width: 100%;
-    justify-content: center;
-  }
-}
-`
+import FilterButton from '../dashboard/FilterButton'
 
 function CourtManagement() {
   const [showAddCourtForm, setShowAddCourtForm] = useState(false)
@@ -239,6 +11,8 @@ function CourtManagement() {
   const [statusFilter, setStatusFilter] = useState(null)
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false)
   const [selectedCourt, setSelectedCourt] = useState(null)
+  const [selectedFields, setSelectedFields] = useState([]);
+  const [selectedCourtTypes, setSelectedCourtTypes] = useState([]);
   const statusDropdownRef = useRef(null)
 
   const handleViewDetails = (court) => {
@@ -273,6 +47,11 @@ function CourtManagement() {
     setStatusFilter(status)
     setIsStatusDropdownOpen(false)
   }
+
+  const handleApplyFilters = (fields, courtTypes) => {
+    setSelectedFields(fields);
+    setSelectedCourtTypes(courtTypes);
+  };
 
   const handleAddCourt = () => {
     setShowAddCourtForm(true)
@@ -353,7 +132,14 @@ function CourtManagement() {
     },
   ]
 
-  const filteredCourts = statusFilter ? courts.filter((court) => court.status === statusFilter) : courts
+  const filteredCourts = courts.filter((court) => {
+    const matchesField = selectedFields.length === 0 || selectedFields.includes(court.name);
+    const matchesCourtType = selectedCourtTypes.length === 0 || selectedCourtTypes.includes(court.type);
+    const matchesStatus = !statusFilter || court.status === statusFilter;
+    return matchesField && matchesCourtType && matchesStatus;
+  });
+
+  // const filteredCourts = statusFilter ? courts.filter((court) => court.status === statusFilter) : courts
 
   // If showing add court form, render that component
   if (showAddCourtForm) {
@@ -363,9 +149,6 @@ function CourtManagement() {
   // Otherwise render the court management page
   return (
     <>
-      {/* Add the additional styles */}
-      <style>{additionalStyles}</style>
-
       <div className="court-management">
         <div className="filter-buttonkr">
           <svg width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -373,7 +156,8 @@ function CourtManagement() {
             <path d="M6.5 11.5H16.5" stroke="#363636" strokeWidth="2" strokeLinecap="round" />
             <path d="M8.5 15.5H14.5" stroke="#363636" strokeWidth="2" strokeLinecap="round" />
           </svg>
-          <span>Filter</span>
+          
+          <span><FilterButton onApplyFilters={handleApplyFilters} /></span>
         </div>
 
         <div className="dashboard-button" onClick={handleAddCourt}>
