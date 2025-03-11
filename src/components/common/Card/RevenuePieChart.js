@@ -72,28 +72,44 @@ const RevenuePieChart = ({
       const userData = userDoc.data();
       const userIdForQuery = userData.user_id;
 
-      // ดึงข้อมูล Courts ทั้งหมดก่อนเพื่อใช้เป็นการเทียบ
+      // 1. ดึงข้อมูล Courts ทั้งหมดก่อนเพื่อใช้เป็นการเทียบ
       const courtsRef = collection(db, 'Court');
       const courtsSnapshot = await getDocs(courtsRef);
       
       // สร้าง Map ของข้อมูล Court
       const courtsMap = {};
+      // เก็บ court_id ที่เป็นของ user ปัจจุบัน
+      const userCourtIds = [];
+      
       courtsSnapshot.forEach(doc => {
         const court = doc.data();
         courtsMap[court.court_id] = court;
+        
+        // ถ้าเป็นสนามของ user ปัจจุบัน ให้เก็บ court_id ไว้
+        if (court.user_id === userIdForQuery) {
+          userCourtIds.push(court.court_id);
+        }
       });
       
       console.log('Revenue Pie Chart - Fetched courts:', Object.keys(courtsMap).length);
+      console.log('Revenue Pie Chart - User owned courts:', userCourtIds.length, userCourtIds);
+      
+      if (userCourtIds.length === 0) {
+        console.log('Revenue Pie Chart - User does not own any courts');
+        setChartData([]);
+        setLoading(false);
+        return;
+      }
 
+      // 2. ดึงข้อมูลการจองทั้งหมด
       const bookingsRef = collection(db, 'Booking');
-      const userBookingsQuery = query(
+      const bookingsQuery = query(
         bookingsRef,
-        where('user_id', '==', userIdForQuery),
         orderBy('start_time', 'asc')
       );
 
-      const bookingSnapshots = await getDocs(userBookingsQuery);
-      console.log('Revenue Pie Chart - Found bookings:', bookingSnapshots.size);
+      const bookingSnapshots = await getDocs(bookingsQuery);
+      console.log('Revenue Pie Chart - Found all bookings:', bookingSnapshots.size);
 
       if (bookingSnapshots.empty) {
         console.log('Revenue Pie Chart - No bookings found');
@@ -105,9 +121,16 @@ const RevenuePieChart = ({
       // เก็บข้อมูลดิบทั้งหมดก่อน
       const rawBookings = [];
 
+      // 3. กรองข้อมูลการจองที่เป็นของสนามที่ user เป็นเจ้าของ
       for (const docSnapshot of bookingSnapshots.docs) {
         const booking = docSnapshot.data();
         const courtId = booking.court_id;
+        
+        // ตรวจสอบว่าเป็นการจองของสนามที่ user เป็นเจ้าของหรือไม่
+        if (!userCourtIds.includes(courtId)) {
+          continue;
+        }
+        
         const court = courtsMap[courtId];
         
         if (!court) {
@@ -138,7 +161,7 @@ const RevenuePieChart = ({
         });
       }
 
-      console.log('Revenue Pie Chart - Raw bookings:', rawBookings.length);
+      console.log('Revenue Pie Chart - Raw bookings after court owner filtering:', rawBookings.length);
 
       // ประมวลผลข้อมูลตามตัวกรองที่เลือก
       let filteredBookings = [];

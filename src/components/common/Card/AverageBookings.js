@@ -9,7 +9,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent } from "../Card/Card";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { db } from "../../../firebaseConfig";
 import "./AverageBookings.css";
 
@@ -24,6 +25,7 @@ const AverageBookingsChart = ({
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const auth = getAuth();
 
   // เพิ่ม console.log เพื่อตรวจสอบค่าที่ได้รับ
   console.log("AverageBookingsChart Props:", {
@@ -35,7 +37,18 @@ const AverageBookingsChart = ({
 
   useEffect(() => {
     console.log("AverageBookingsChart useEffect triggered");
-    fetchBookingData();
+    
+    // ตรวจสอบการล็อกอินและดึงข้อมูล
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        fetchBookingData(user);
+      } else {
+        setError('You need to login to view booking data');
+        setLoading(false);
+      }
+    });
+    
+    return () => unsubscribe();
   }, [
     selectedMonth,
     selectedYear,
@@ -45,18 +58,63 @@ const AverageBookingsChart = ({
     dashboardFilterPeriod,
   ]);
 
-  const fetchBookingData = async () => {
+  const fetchBookingData = async (user) => {
     try {
       setLoading(true);
       console.log(
         `Starting fetchBookingData - Month: ${selectedMonth}, Year: ${selectedYear}`
       );
+      
+      if (!user) {
+        console.log('No user logged in for booking data');
+        setError('You need to login to view booking data');
+        setLoading(false);
+        return;
+      }
+      
+      // ดึงข้อมูล user_id จาก Firestore
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (!userDoc.exists()) {
+        console.log('User document not found for booking data');
+        setError('User profile not found');
+        setLoading(false);
+        return;
+      }
+      
+      const userData = userDoc.data();
+      const userIdForQuery = userData.user_id;
+      
+      // 1. ดึงข้อมูล Courts ทั้งหมดก่อนเพื่อหาสนามที่ user เป็นเจ้าของ
+      const courtsRef = collection(db, "Court");
+      const courtsSnapshot = await getDocs(courtsRef);
+      
+      // สร้าง Map ของข้อมูล Court และเก็บ court_id ที่ user เป็นเจ้าของ
+      const courtsMap = {};
+      const userCourtIds = [];
+      
+      courtsSnapshot.forEach((doc) => {
+        const court = doc.data();
+        courtsMap[court.court_id] = court;
+        
+        // ถ้าเป็นสนามของ user ปัจจุบัน ให้เก็บ court_id ไว้
+        if (court.user_id === userIdForQuery) {
+          userCourtIds.push(court.court_id);
+        }
+      });
+      
+      console.log('User owned courts:', userCourtIds);
+      
+      if (userCourtIds.length === 0) {
+        console.log('User does not own any courts');
+        setChartData([]);
+        setLoading(false);
+        return;
+      }
 
-      // สร้าง query พื้นฐานไปยัง collection Booking (ตัวใหญ่)
-      let bookingsRef = collection(db, "Booking");
-      let constraints = [];
-
-      // ดึงข้อมูลการจอง
+      // 2. ดึงข้อมูลการจองทั้งหมด
+      const bookingsRef = collection(db, "Booking");
       const bookingSnapshot = await getDocs(bookingsRef);
       console.log("จำนวน document ที่ดึงได้:", bookingSnapshot.size);
 
@@ -65,6 +123,11 @@ const AverageBookingsChart = ({
       bookingSnapshot.forEach((doc) => {
         const data = doc.data();
         console.log("ข้อมูล Booking ID:", doc.id, data);
+        
+        // ข้ามการจองที่ไม่ได้เป็นของสนามที่ user เป็นเจ้าของ
+        if (!userCourtIds.includes(data.court_id)) {
+          return;
+        }
 
         // แปลง Firestore timestamp หรือ string เป็น Date object
         let startTimeDate;
@@ -75,6 +138,9 @@ const AverageBookingsChart = ({
         } else if (typeof data.start_time === "string") {
           // กรณีเป็น string
           startTimeDate = new Date(data.start_time);
+        } else if (data.start_time?.seconds) {
+          // กรณีเป็น Firestore timestamp แบบ object
+          startTimeDate = new Date(data.start_time.seconds * 1000);
         } else {
           // กรณีอื่นๆ
           startTimeDate = new Date(data.start_time);
@@ -100,6 +166,8 @@ const AverageBookingsChart = ({
           year: startTimeDate.getFullYear(),
         });
       });
+      
+      console.log("จำนวนการจองของสนามที่เป็นเจ้าของ:", bookings.length);
 
       // กรองข้อมูลตามเดือนและปีที่เลือกหลังจากดึงข้อมูลมาแล้ว
       let filteredBookings = [...bookings];
@@ -121,25 +189,16 @@ const AverageBookingsChart = ({
           return booking.year === selectedYear;
         });
       }
+      
+      console.log("หลังจากกรองตามเดือน/ปี เหลือข้อมูล:", filteredBookings.length);
 
-      // กรองตาม fields และ court types ต้องดึงข้อมูล Court ก่อน
+      // กรองตาม fields และ court types 
       if (
         (selectedFields && selectedFields.length > 0) ||
         (selectedCourtTypes && selectedCourtTypes.length > 0)
       ) {
         console.log("กรองตาม fields:", selectedFields);
         console.log("กรองตาม court types:", selectedCourtTypes);
-
-        // ต้องดึงข้อมูล Court เพื่อเทียบชื่อสนามกับ court_id
-        const courtsRef = collection(db, "Court");
-        const courtsSnapshot = await getDocs(courtsRef);
-
-        // สร้าง Map ของข้อมูล Court โดยใช้ court_id เป็น key
-        const courtsMap = {};
-        courtsSnapshot.forEach((doc) => {
-          const court = doc.data();
-          courtsMap[court.court_id] = court;
-        });
 
         filteredBookings = filteredBookings.filter((booking) => {
           const court = courtsMap[booking.court_id];

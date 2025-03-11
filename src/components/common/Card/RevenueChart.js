@@ -53,29 +53,45 @@ const RevenueChart = ({
       const userIdForQuery = userData.user_id;
       console.log('Using user_id for query:', userIdForQuery);
 
-      // ดึงข้อมูล Courts ทั้งหมดก่อนเพื่อใช้กรอง
+      // 1. ดึงข้อมูล Courts ทั้งหมดก่อนเพื่อใช้กรอง
       const courtsRef = collection(db, 'Court');
       const courtsSnapshot = await getDocs(courtsRef);
       
       // สร้าง Map ของข้อมูล Court
       const courtsMap = {};
+      // เก็บสนามที่เป็นของ user ปัจจุบัน
+      const userCourtIds = [];
+      
       courtsSnapshot.forEach(doc => {
         const court = doc.data();
         courtsMap[court.court_id] = court;
+        
+        // ถ้าเป็นสนามของ user ปัจจุบัน ให้เก็บ court_id ไว้
+        if (court.user_id === userIdForQuery) {
+          userCourtIds.push(court.court_id);
+        }
       });
       
       console.log('Fetched courts:', Object.keys(courtsMap).length);
+      console.log('User owned courts:', userCourtIds.length, userCourtIds);
+      
+      if (userCourtIds.length === 0) {
+        console.log('User does not own any courts');
+        setData([]);
+        setFilteredData([]);
+        setLoading(false);
+        return;
+      }
 
-      // ดึงข้อมูลการจอง
+      // 2. ดึงข้อมูลการจองทั้งหมด
       const bookingsRef = collection(db, 'Booking');
-      const userBookingsQuery = query(
+      const bookingsQuery = query(
         bookingsRef,
-        where('user_id', '==', userIdForQuery),
         orderBy('start_time', 'asc')
       );
 
-      const bookingSnapshots = await getDocs(userBookingsQuery);
-      console.log('Found bookings:', bookingSnapshots.size);
+      const bookingSnapshots = await getDocs(bookingsQuery);
+      console.log('Found all bookings:', bookingSnapshots.size);
 
       if (bookingSnapshots.size === 0) {
         console.log('No bookings found');
@@ -85,12 +101,18 @@ const RevenueChart = ({
         return;
       }
 
-      // กรองข้อมูลตาม selectedFields และ selectedCourtTypes
+      // 3. กรองข้อมูลการจองที่เป็นของสนามที่ user เป็นเจ้าของ และตรงตามเงื่อนไขอื่นๆ
       const filteredBookings = [];
       
       for (const docSnapshot of bookingSnapshots.docs) {
         const booking = docSnapshot.data();
         const courtId = booking.court_id;
+        
+        // ตรวจสอบว่าเป็นการจองของสนามที่ user เป็นเจ้าของหรือไม่
+        if (!userCourtIds.includes(courtId)) {
+          continue;
+        }
+        
         const court = courtsMap[courtId];
         
         // ถ้าไม่พบข้อมูล court หรือไม่ตรงกับเงื่อนไขกรอง ให้ข้าม
@@ -108,7 +130,7 @@ const RevenueChart = ({
         }
       }
       
-      console.log('Bookings after filtering by fields/court types:', filteredBookings.length);
+      console.log('Bookings after filtering by owner and fields/court types:', filteredBookings.length);
       
       // ถ้าไม่มีข้อมูลหลังการกรอง ให้แสดงข้อมูลว่าง
       if (filteredBookings.length === 0) {

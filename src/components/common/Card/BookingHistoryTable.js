@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../Card/Card';
-import { collection, getDocs, query, orderBy, limit, startAfter, where } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, where, doc, getDoc } from 'firebase/firestore';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { db } from '../../../firebaseConfig'; // ปรับ path ตามความเหมาะสม
 import './BookingHistoryTable.css';
 
@@ -13,32 +14,47 @@ const BookingHistoryTable = ({
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [lastVisible, setLastVisible] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalBookings, setTotalBookings] = useState(0);
   const [users, setUsers] = useState({});
   const [courts, setCourts] = useState({});
-  const bookingsPerPage = 5;
+  const [allFilteredBookings, setAllFilteredBookings] = useState([]); // เก็บข้อมูลที่กรองทั้งหมด
+  const [userCourtIds, setUserCourtIds] = useState([]); // เก็บ court_id ที่ user เป็นเจ้าของ
+  const bookingsPerPage = 10;
+  const auth = getAuth();
 
   // ดึงข้อมูล Court
-  const fetchCourts = async () => {
+  const fetchCourts = async (userId = null) => {
     try {
       const courtsRef = collection(db, "Court");
       const courtsSnapshot = await getDocs(courtsRef);
       
       const courtsData = {};
+      const userCourts = []; // เก็บ court_id ที่ user เป็นเจ้าของ
+      
       courtsSnapshot.forEach(doc => {
         const data = doc.data();
         courtsData[data.court_id] = data;
+        
+        // ถ้ามี userId และ court นี้เป็นของ user นั้น ให้เก็บไว้
+        if (userId && data.user_id === userId) {
+          userCourts.push(data.court_id);
+        }
       });
       
       console.log('All courts data:', courtsData);
       setCourts(courtsData);
-      return courtsData; // ส่งค่ากลับเพื่อใช้ในฟังก์ชันอื่น
+      
+      if (userId) {
+        setUserCourtIds(userCourts);
+        console.log('User owns courts with IDs:', userCourts);
+      }
+      
+      return { courtsData, userCourts }; // ส่งค่ากลับเพื่อใช้ในฟังก์ชันอื่น
     } catch (err) {
       console.error("Error fetching courts:", err);
-      return {};
+      return { courtsData: {}, userCourts: [] };
     }
   };
 
@@ -64,8 +80,8 @@ const BookingHistoryTable = ({
     }
   };
 
-  // ดึงข้อมูลการจอง
-  const fetchBookings = async (page = 1) => {
+  // ดึงข้อมูลการจองและประมวลผลการกรอง
+  const fetchBookings = async () => {
     try {
       setLoading(true);
       console.log('BookingHistoryTable - Fetching bookings with filters:', {
@@ -75,46 +91,60 @@ const BookingHistoryTable = ({
         selectedCourtTypes
       });
       
-      // ดึงข้อมูล Court และ User ก่อน
-      const courtsData = await fetchCourts();
+      // ตรวจสอบผู้ใช้ปัจจุบัน
+      const user = auth.currentUser;
+      if (!user) {
+        console.log('No user logged in for booking history');
+        setError('You need to login to view booking history');
+        setLoading(false);
+        return;
+      }
+      
+      // ดึงข้อมูล user_id จาก Firestore
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (!userDoc.exists()) {
+        console.log('User document not found for booking history');
+        setError('User profile not found');
+        setLoading(false);
+        return;
+      }
+      
+      const userData = userDoc.data();
+      const userIdForQuery = userData.user_id;
+      console.log('Using user_id for booking history query:', userIdForQuery);
+      
+      // ดึงข้อมูล Court, User และกำหนดสนามที่ user เป็นเจ้าของ
+      const { courtsData, userCourts } = await fetchCourts(userIdForQuery);
       const usersData = await fetchUsers();
+      
+      if (userCourts.length === 0) {
+        console.log('User does not own any courts');
+        setAllFilteredBookings([]);
+        setTotalBookings(0);
+        setTotalPages(0);
+        setBookings([]);
+        setLoading(false);
+        return;
+      }
       
       console.log('Available fields from courts:', 
         [...new Set(Object.values(courtsData).map(court => court.field))]);
       console.log('Available court types from courts:', 
         [...new Set(Object.values(courtsData).map(court => court.court_type))]);
 
-      let bookingsQuery;
+      // ดึงข้อมูลทั้งหมดครั้งเดียว
       const bookingsRef = collection(db, "Booking");
       
-      // ดึงข้อมูลทั้งหมดก่อน แล้วค่อยกรอง
-      if (page === 1 || !lastVisible) {
-        // คิวรี่หน้าแรก
-        bookingsQuery = query(
-          bookingsRef,
-          orderBy("start_time", "desc"), // เรียงตามเวลาเริ่มล่าสุด
-          limit(bookingsPerPage * 10) // ดึงมากกว่าปกติเพื่อรองรับการกรอง
-        );
-      } else {
-        // คิวรี่สำหรับแบ่งหน้า
-        bookingsQuery = query(
-          bookingsRef,
-          orderBy("start_time", "desc"),
-          startAfter(lastVisible),
-          limit(bookingsPerPage * 10) // ดึงมากกว่าปกติเพื่อรองรับการกรอง
-        );
-      }
+      // สร้างคิวรี่พื้นฐาน
+      let bookingsQuery = query(
+        bookingsRef,
+        orderBy("start_time", "desc") // เรียงตามเวลาเริ่มล่าสุด
+      );
 
       const bookingsSnapshot = await getDocs(bookingsQuery);
       console.log('Total bookings fetched:', bookingsSnapshot.size);
-      
-      // แสดงรายละเอียดข้อมูลการจองที่ดึงมา (เพื่อการตรวจสอบ)
-      const rawBookingData = bookingsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      console.log('First 3 raw bookings:', rawBookingData.slice(0, 3));
       
       // แปลงข้อมูลจาก Firestore เป็นรูปแบบที่ต้องการ
       let bookingsData = bookingsSnapshot.docs.map(doc => {
@@ -130,13 +160,23 @@ const BookingHistoryTable = ({
           startTime = new Date(data.start_time);
         }
         
+        // ตรวจสอบรูปแบบข้อมูล end_time
+        let endTime;
+        if (data.end_time?.toDate) {
+          endTime = data.end_time.toDate();
+        } else if (typeof data.end_time === 'object' && data.end_time?.seconds) {
+          endTime = new Date(data.end_time.seconds * 1000);
+        } else {
+          endTime = new Date(data.end_time);
+        }
+        
         return {
           id: doc.id,
           bookingId: data.booking_id || '',
           userId: data.user_id || '',
           courtId: data.court_id || '',
           startTime: startTime,
-          endTime: data.end_time?.toDate ? data.end_time.toDate() : new Date(data.end_time),
+          endTime: endTime,
           status: data.status || 'Pending',
           // เพิ่มข้อมูลสำหรับการกรอง
           month: startTime.getMonth(),
@@ -145,6 +185,11 @@ const BookingHistoryTable = ({
       });
       
       console.log('Parsed bookings data before filtering:', bookingsData.length);
+      
+      // กรองเฉพาะการจองที่เป็นของสนามที่ user เป็นเจ้าของ
+      const beforeOwnerFilterCount = bookingsData.length;
+      bookingsData = bookingsData.filter(booking => userCourts.includes(booking.courtId));
+      console.log(`After filtering by owned courts: ${bookingsData.length} (removed ${beforeOwnerFilterCount - bookingsData.length})`);
       
       // กรองตามเดือนและปีที่เลือก (ถ้ามี)
       if (selectedMonth !== undefined && selectedYear !== undefined) {
@@ -162,59 +207,37 @@ const BookingHistoryTable = ({
         
         const beforeFilterCount = bookingsData.length;
         const filteredData = [];
-        const rejectedBookings = [];
         
         for (const booking of bookingsData) {
           const court = courtsData[booking.courtId];
           
           if (!court) {
-            rejectedBookings.push({
-              id: booking.id,
-              courtId: booking.courtId,
-              reason: 'Court not found'
-            });
+            console.log(`Court not found for booking: ${booking.id}, courtId: ${booking.courtId}`);
             continue;
           }
           
           const fieldMatch = selectedFields.length === 0 || selectedFields.includes(court.field);
           const typeMatch = selectedCourtTypes.length === 0 || selectedCourtTypes.includes(court.court_type);
           
-          // แสดงข้อมูลเพื่อตรวจสอบ
-          console.log(`Booking ${booking.id} - Court: ${court.field} / ${court.court_type} - FieldMatch: ${fieldMatch}, TypeMatch: ${typeMatch}`);
-          
           if (fieldMatch && typeMatch) {
             filteredData.push(booking);
-          } else {
-            rejectedBookings.push({
-              id: booking.id,
-              courtId: booking.courtId,
-              field: court.field,
-              court_type: court.court_type,
-              fieldMatch,
-              typeMatch
-            });
           }
         }
         
         console.log(`After filtering by fields/court types: ${filteredData.length} (removed ${beforeFilterCount - filteredData.length})`);
-        console.log('Rejected bookings sample:', rejectedBookings.slice(0, 5));
-        
         bookingsData = filteredData;
       }
       
-      // จำกัดจำนวนเฉพาะที่จะแสดงในหน้านี้
-      const paginatedBookings = bookingsData.slice((page - 1) * bookingsPerPage, page * bookingsPerPage);
+      // เก็บข้อมูลที่กรองแล้วทั้งหมด
+      setAllFilteredBookings(bookingsData);
       
-      // นับจำนวนทั้งหมดสำหรับแบ่งหน้า
+      // ตั้งค่าจำนวนทั้งหมดและจำนวนหน้า
       setTotalBookings(bookingsData.length);
       setTotalPages(Math.ceil(bookingsData.length / bookingsPerPage));
       
-      // เก็บข้อมูลการจองล่าสุดสำหรับการแบ่งหน้า
-      const lastBooking = bookingsSnapshot.docs[bookingsSnapshot.docs.length - 1];
-      setLastVisible(lastBooking);
+      // ประมวลผลข้อมูลสำหรับหน้าปัจจุบัน
+      updateCurrentPageData(bookingsData, 1);
       
-      console.log('Final paginated bookings for display:', paginatedBookings.length);
-      setBookings(paginatedBookings);
     } catch (err) {
       console.error("Error fetching bookings:", err);
       setError("ไม่สามารถโหลดประวัติการจองได้ กรุณาลองใหม่อีกครั้ง");
@@ -223,11 +246,22 @@ const BookingHistoryTable = ({
     }
   };
 
+  // อัปเดตข้อมูลสำหรับหน้าปัจจุบัน
+  const updateCurrentPageData = (allData, page) => {
+    const startIndex = (page - 1) * bookingsPerPage;
+    const endIndex = startIndex + bookingsPerPage;
+    const paginatedData = allData.slice(startIndex, endIndex);
+    
+    console.log(`Showing items ${startIndex+1} to ${Math.min(endIndex, allData.length)} of ${allData.length}`);
+    setBookings(paginatedData);
+    setCurrentPage(page);
+  };
+
   // จัดการการเปลี่ยนหน้า
   const handlePageChange = (page) => {
     console.log('Changing to page:', page);
-    setCurrentPage(page);
-    fetchBookings(page);
+    // ใช้ข้อมูลที่กรองไว้แล้วสำหรับแบ่งหน้า
+    updateCurrentPageData(allFilteredBookings, page);
   };
 
   // โหลดข้อมูลเมื่อคอมโพเนนต์ถูกโหลดหรือฟิลเตอร์เปลี่ยน
@@ -239,12 +273,17 @@ const BookingHistoryTable = ({
       selectedCourtTypes
     });
     
-    const loadData = async () => {
-      fetchBookings(1); // เริ่มที่หน้า 1 เมื่อฟิลเตอร์เปลี่ยน
-      setCurrentPage(1); // รีเซ็ตหน้าปัจจุบัน
-    };
+    // ตรวจสอบการล็อกอินและดึงข้อมูล
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        fetchBookings();
+      } else {
+        setError('You need to login to view booking history');
+        setLoading(false);
+      }
+    });
     
-    loadData();
+    return () => unsubscribe();
   }, [selectedMonth, selectedYear, selectedFields, selectedCourtTypes]);
 
   // แปลงวันที่เป็นรูปแบบที่อ่านง่าย
@@ -329,7 +368,6 @@ const BookingHistoryTable = ({
   const translateStatus = (status) => {
     if (!status) return 'Pending';
     
-    // ถ้าเป็นภาษาอังกฤษ ให้แปลเป็นภาษาไทย
     switch (status.toLowerCase()) {
       case 'successful':
       case 'completed':
@@ -342,7 +380,7 @@ const BookingHistoryTable = ({
       case 'waiting':
         return 'Pending';
       default:
-        return status; // ถ้าเป็นภาษาไทยหรืออื่นๆ ให้ใช้ค่าเดิม
+        return status;
     }
   };
 
