@@ -16,7 +16,7 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
     { title: 'Revenue', value: '฿0.00', change: 0 },
     { title: 'Total Bookings', value: '0', change: 0 },
     { title: 'Total Booking Hours', value: '0 hr.', change: 0 },
-    { title: 'Total new customers', value: '0', change: 0 }, // เปลี่ยนกลับเป็น Total new customers
+    { title: 'Total new customers', value: '0', change: 0 },
   ]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -117,17 +117,50 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
         const userData = userDoc.data();
         const userIdForQuery = userData.user_id;
         console.log('Using user_id for query:', userIdForQuery);
-
+        
+        // 1. ดึงข้อมูล Court ทั้งหมด
+        const courtsRef = collection(db, 'Court');
+        const courtsSnapshot = await getDocs(courtsRef);
+        
+        // สร้าง Map ของข้อมูล Court โดยใช้ court_id เป็น key
+        const courtsMap = {};
+        
+        // เก็บสนามที่เป็นของ user ปัจจุบัน
+        const userCourtIds = [];
+        
+        courtsSnapshot.forEach(doc => {
+          const court = doc.data();
+          courtsMap[court.court_id] = court;
+          
+          // ถ้าเป็นสนามของ user ปัจจุบัน ให้เก็บ court_id ไว้
+          if (court.user_id === userIdForQuery) {
+            userCourtIds.push(court.court_id);
+          }
+        });
+        
+        console.log('Courts map created with', Object.keys(courtsMap).length, 'courts');
+        console.log('User owns courts with IDs:', userCourtIds);
+        
+        if (userCourtIds.length === 0) {
+          console.log('User does not own any courts');
+          setMetrics(prevMetrics => [
+            { ...prevMetrics[0], value: '฿0.00', change: 0 },
+            ...prevMetrics.slice(1)
+          ]);
+          setLoading(false);
+          return;
+        }
+        
+        // 2. ดึงข้อมูลการจองทั้งหมด
         const bookingsRef = collection(db, 'Booking');
-        const userBookingsQuery = query(
+        const bookingsQuery = query(
           bookingsRef,
-          where('user_id', '==', userIdForQuery),
           orderBy('start_time', 'asc')
         );
-
-        const bookingSnapshots = await getDocs(userBookingsQuery);
+        
+        const bookingSnapshots = await getDocs(bookingsQuery);
         console.log('Found bookings:', bookingSnapshots.size);
-
+        
         if (bookingSnapshots.size === 0) {
           console.log('No bookings found');
           setMetrics(prevMetrics => [
@@ -137,38 +170,18 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
           setLoading(false);
           return;
         }
-
-        // รวบรวมการจองทั้งหมด
+        
+        // 3. กรองข้อมูลการจองที่เป็นของสนามที่ user เป็นเจ้าของ
         const allBookings = [];
         
-        // ตรวจสอบว่ามีการกรองด้วย fields หรือ court types หรือไม่
-        if (selectedFields.length > 0 || selectedCourtTypes.length > 0) {
-          console.log('Filtering by fields:', selectedFields);
-          console.log('Filtering by court types:', selectedCourtTypes);
+        for (const docSnapshot of bookingSnapshots.docs) {
+          const booking = docSnapshot.data();
           
-          // ดึงข้อมูล Court ทั้งหมดก่อน
-          const courtsRef = collection(db, 'Court');
-          const courtsSnapshot = await getDocs(courtsRef);
-          
-          // สร้าง Map ของข้อมูล Court โดยใช้ court_id เป็น key
-          const courtsMap = {};
-          courtsSnapshot.forEach(doc => {
-            const court = doc.data();
-            courtsMap[court.court_id] = court;
-          });
-          
-          console.log('Courts map created with', Object.keys(courtsMap).length, 'courts');
-          
-          // กรองการจองตามเงื่อนไขที่เลือก
-          for (const docSnapshot of bookingSnapshots.docs) {
-            const booking = docSnapshot.data();
+          // ตรวจสอบว่า court_id ในการจองตรงกับสนามที่ user เป็นเจ้าของหรือไม่
+          if (userCourtIds.includes(booking.court_id)) {
             const court = courtsMap[booking.court_id];
             
-            if (!court) {
-              console.log('Court not found for booking:', booking.court_id);
-              continue; // ข้ามถ้าไม่พบข้อมูล Court
-            }
-            
+            // กรองตาม fields และ court types ที่เลือก (ถ้ามี)
             const fieldMatch = selectedFields.length === 0 || selectedFields.includes(court.field);
             const courtTypeMatch = selectedCourtTypes.length === 0 || selectedCourtTypes.includes(court.court_type);
             
@@ -176,16 +189,10 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
               allBookings.push(booking);
             }
           }
-          
-          console.log('After filtering, found', allBookings.length, 'bookings that match criteria');
-        } else {
-          // ถ้าไม่มีการกรอง ให้ใช้ข้อมูลทั้งหมด
-          for (const docSnapshot of bookingSnapshots.docs) {
-            allBookings.push(docSnapshot.data());
-          }
-          console.log('No filters applied, using all', allBookings.length, 'bookings');
         }
-
+        
+        console.log('After filtering, found', allBookings.length, 'bookings for user\'s courts');
+        
         // กรองข้อมูลตาม filterPeriod
         const filteredData = filterDataByPeriod(allBookings, filterPeriod, selectedMonth, selectedYear);
         
@@ -200,7 +207,7 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
         let currentBookingHours = 0;
         let previousBookingHours = 0;
         
-        // เก็บ user_id ที่พบในแต่ละช่วงเวลา
+        // เก็บ user_id ที่พบในแต่ละช่วงเวลา (สำหรับนับลูกค้าใหม่)
         let currentUsers = new Set();
         let previousUsers = new Set();
 
@@ -212,17 +219,13 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
           }
 
           try {
-            // คำนวณรายได้และเวลา
-            const courtsRef = collection(db, 'Court');
-            const courtQuery = query(courtsRef, where('court_id', '==', booking.court_id));
-            const courtSnapshot = await getDocs(courtQuery);
+            // ดึงข้อมูล Court จาก courtsMap ที่เตรียมไว้แล้ว
+            const courtData = courtsMap[booking.court_id];
             
-            if (courtSnapshot.empty) {
-              console.log('Court not found:', booking.court_id);
+            if (!courtData) {
+              console.log('Court not found in map:', booking.court_id);
               continue;
             }
-            
-            const courtData = courtSnapshot.docs[0].data();
             
             // คำนวณระยะเวลาและราคา
             const startTime = new Date(booking.start_time.seconds * 1000).getTime();
@@ -253,17 +256,13 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
           }
 
           try {
-            // คำนวณรายได้และเวลา
-            const courtsRef = collection(db, 'Court');
-            const courtQuery = query(courtsRef, where('court_id', '==', booking.court_id));
-            const courtSnapshot = await getDocs(courtQuery);
+            // ดึงข้อมูล Court จาก courtsMap ที่เตรียมไว้แล้ว
+            const courtData = courtsMap[booking.court_id];
             
-            if (courtSnapshot.empty) {
-              console.log('Court not found:', booking.court_id);
+            if (!courtData) {
+              console.log('Court not found in map:', booking.court_id);
               continue;
             }
-            
-            const courtData = courtSnapshot.docs[0].data();
             
             // คำนวณระยะเวลาและราคา
             const startTime = new Date(booking.start_time.seconds * 1000).getTime();
@@ -346,7 +345,7 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
     };
 
     fetchRevenueData();
-  }, [user, selectedMonth, selectedYear, filterPeriod, selectedFields, selectedCourtTypes]); // เพิ่ม selectedFields และ selectedCourtTypes เป็น dependencies
+  }, [user, selectedMonth, selectedYear, filterPeriod, selectedFields, selectedCourtTypes]);
 
   return { metrics, loading, error };
 };
