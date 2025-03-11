@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
+import { collection, getDocs, updateDoc, doc, where, query, onSnapshot } from "firebase/firestore";
 import { db } from '../../firebaseConfig';
-import { ChevronDown, ChevronLeft, X, ArrowUp, ArrowDown } from "lucide-react"; // Import ไอคอนเพิ่มเติม
+import { ChevronDown, ChevronLeft, X, ArrowUp, ArrowDown } from "lucide-react";
 import "./RefundRequest.css";
-import { onSnapshot } from "firebase/firestore";
-
 
 const RefundRequest = () => {
   const [error, setError] = useState("");
@@ -15,36 +13,189 @@ const RefundRequest = () => {
   const [isRejected, setIsRejected] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
-  const [sortOrder, setSortOrder] = useState("asc"); // State สำหรับการจัดเรียงวันที่
+  const [sortOrder, setSortOrder] = useState("asc");
 
   useEffect(() => {
-    // Subscribe to Firestore collection in real-time
-    const unsubscribe = onSnapshot(
-      collection(db, "Refund"),
-      (snapshot) => {
-        const refundData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
+    const unsubscribe = onSnapshot(collection(db, "Refund"), async (snapshot) => {
+      try {
+        const refundData = await Promise.all(snapshot.docs.map(async (refundDoc) => {
+          const refund = { id: refundDoc.id, ...refundDoc.data() };
+
+          // Fetch user data for name and profile image using where() query
+          const usersQuery = query(collection(db, "users"), where("user_id", "==", refund.user_id));
+          const usersSnapshot = await getDocs(usersQuery);
+          let userName = "N/A";
+          let userProfileImage = "";
+
+          if (!usersSnapshot.empty) {
+            const userData = usersSnapshot.docs[0].data();
+            userName = `${userData.name || ""} ${userData.surname || ""}`.trim();
+            userProfileImage = userData.profileImage || "";
+          }
+
+          refund.user = {
+            name: userName,
+            profileImage: userProfileImage,
+          };
+
+          // Fetch booking data using where() query
+          const bookingQuery = query(collection(db, "Booking"), where("booking_id", "==", refund.booking_id));
+          const bookingSnapshot = await getDocs(bookingQuery);
+
+          if (!bookingSnapshot.empty) {
+            const bookingData = bookingSnapshot.docs[0].data();
+
+            // Format date and time for display
+            if (bookingData.start_time && bookingData.end_time) {
+              const startDate = new Date(bookingData.start_time.seconds * 1000);
+              const endDate = new Date(bookingData.end_time.seconds * 1000);
+
+              // Format date (e.g., "Jan 1, 2025")
+              refund.Date = startDate.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              });
+
+              // Format time (e.g., "13:00 - 15:00")
+              const formatTime = (date) => {
+                return date.toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false
+                });
+              };
+
+              refund.Time = `${formatTime(startDate)} - ${formatTime(endDate)}`;
+
+              // Calculate amount based on booking duration and court rates
+              if (bookingData.court_id) {
+                // Fetch court data using where() query
+                const courtQuery = query(collection(db, "Court"), where("court_id", "==", bookingData.court_id));
+                const courtSnapshot = await getDocs(courtQuery);
+
+                if (!courtSnapshot.empty) {
+                  const courtData = courtSnapshot.docs[0].data();
+                  refund.Field = courtData.field || "N/A";
+                  refund.Court = courtData.court_type || "N/A";
+
+                  // Calculate the price based on booking duration and court rates
+                  if (courtData.bookingslot && courtData.priceslot) {
+                    const startTime = startDate.getTime();
+                    const endTime = endDate.getTime();
+                    const durationInMinutes = (endTime - startTime) / (1000 * 60);
+                    const slots = Math.ceil(durationInMinutes / courtData.bookingslot);
+                    refund.amount = slots * courtData.priceslot;
+                  } else {
+                    refund.amount = 0;
+                    console.error('Missing bookingslot or priceslot in court data:', courtData);
+                  }
+                } else {
+                  refund.Field = "N/A";
+                  refund.Court = "N/A";
+                  refund.amount = 0;
+                }
+              } else {
+                refund.Field = "N/A";
+                refund.Court = "N/A";
+                refund.amount = 0;
+              }
+            } else {
+              refund.Date = "N/A";
+              refund.Time = "N/A";
+              refund.amount = 0;
+            }
+          } else {
+            refund.Date = "N/A";
+            refund.Time = "N/A";
+            refund.Field = "N/A";
+            refund.Court = "N/A";
+            refund.amount = 0;
+          }
+
+          return refund;
         }));
+
         setRefunds(refundData);
         setLoading(false);
-      },
-      (err) => {
+      } catch (err) {
         setError("Error loading data. Please try again later.");
         console.error("Firebase Error:", err);
         setLoading(false);
       }
-    );
+    }, (err) => {
+      setError("Error loading data. Please try again later.");
+      console.error("Firebase Error:", err);
+      setLoading(false);
+    });
 
-    return () => unsubscribe(); // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
   if (loading) return <p>Loading data...</p>;
   if (error) return <p style={{ color: "red" }}>{error}</p>;
 
+  // Format currency
+  const formatCurrency = (amount) => {
+    return `฿${amount ? amount.toFixed(2) : "0.00"}`;
+  };
+
+  // Format timestamp to display in a readable format
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return "N/A";
+    
+    // Handle Firebase timestamp (with seconds and nanoseconds)
+    if (timestamp.seconds) {
+      const date = new Date(timestamp.seconds * 1000);
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    }
+    
+    // Handle JavaScript Date object
+    if (timestamp instanceof Date) {
+      return timestamp.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    }
+    
+    // If it's a string that looks like a date, try to parse it
+    if (typeof timestamp === "string") {
+      try {
+        const date = new Date(timestamp);
+        if (!isNaN(date.getTime())) {
+          return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          });
+        }
+        return timestamp; // If it's not parseable, just return the string
+      } catch (e) {
+        return timestamp;
+      }
+    }
+    
+    return "N/A";
+  };
+
+  // Modal functions
   const openModal = (refund) => {
     setSelectedRefund(refund);
-    setRejectionReason(refund.rejectionReason || "");
+    setRejectionReason(refund.reason_reject || "");
     setIsRejected(refund.status === "Rejected");
     setIsAccepted(refund.status === "Accepted");
   };
@@ -55,28 +206,25 @@ const RefundRequest = () => {
     setIsAccepted(false);
   };
 
-  const formatCurrency = (amount) => {
-    return `฿${amount ? amount.toFixed(2) : "0.00"}`;
-  };
-
+  // Handle accept/reject actions
   const handleAccept = async () => {
     if (selectedRefund) {
       const refundRef = doc(db, "Refund", selectedRefund.id);
-      await updateDoc(refundRef, { 
-        status: "Accepted", 
-        rejectionReason: null // Set rejectionReason to null when accepting
+      await updateDoc(refundRef, {
+        status: "Accepted",
+        reason_reject: null
       });
       setRefunds((prevRefunds) => prevRefunds.map((refund) =>
-        refund.id === selectedRefund.id 
-          ? { 
-              ...refund, 
-              status: "Accepted", 
-              rejectionReason: null // Also update the local state
-            } 
+        refund.id === selectedRefund.id
+          ? {
+            ...refund,
+            status: "Accepted",
+            reason_reject: null
+          }
           : refund
       ));
       setIsAccepted(true);
-      setRejectionReason(""); // Reset rejection reason in local state
+      setRejectionReason("");
       closeModal();
     }
   };
@@ -84,9 +232,18 @@ const RefundRequest = () => {
   const handleReject = async () => {
     if (selectedRefund && rejectionReason) {
       const refundRef = doc(db, "Refund", selectedRefund.id);
-      await updateDoc(refundRef, { status: "Rejected", rejectionReason: rejectionReason });
+      await updateDoc(refundRef, {
+        status: "Rejected",
+        reason_reject: rejectionReason
+      });
       setRefunds((prevRefunds) => prevRefunds.map((refund) =>
-        refund.id === selectedRefund.id ? { ...refund, status: "Rejected", rejectionReason: rejectionReason } : refund
+        refund.id === selectedRefund.id
+          ? {
+            ...refund,
+            status: "Rejected",
+            reason_reject: rejectionReason
+          }
+          : refund
       ));
       setIsRejected(true);
       closeModal();
@@ -95,17 +252,21 @@ const RefundRequest = () => {
     }
   };
 
-  // ฟังก์ชันสำหรับกรอง refund ตามสถานะ
+  // Filter refunds by status
   const filteredRefunds = statusFilter ? refunds.filter(refund => refund.status === statusFilter) : refunds;
 
-  // ฟังก์ชันสำหรับจัดเรียง refund ตามวันที่
+  // Sort refunds by date
   const sortedRefunds = [...filteredRefunds].sort((a, b) => {
-    const dateA = new Date(a.datetime);
-    const dateB = new Date(b.datetime);
+    const dateA = a.datetime_refund && a.datetime_refund.seconds ? 
+      new Date(a.datetime_refund.seconds * 1000) : 
+      new Date(0);
+    const dateB = b.datetime_refund && b.datetime_refund.seconds ? 
+      new Date(b.datetime_refund.seconds * 1000) : 
+      new Date(0);
     return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
   });
 
-  // ฟังก์ชันสลับการจัดเรียง
+  // Toggle sort order
   const toggleSortOrder = () => {
     setSortOrder((prevOrder) => (prevOrder === "asc" ? "desc" : "asc"));
   };
@@ -118,8 +279,9 @@ const RefundRequest = () => {
           <span>Refund Request</span>
         </div>
 
-        <div className="status-dropdown">
-          <select className="status-button" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+        {/* Status filter */}
+        <div className="status-dropdown2">
+          <select className="status-button2" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="">All Status</option>
             <option value="Need Action">Need Action</option>
             <option value="Accepted">Accepted</option>
@@ -129,67 +291,71 @@ const RefundRequest = () => {
         </div>
       </div>
 
+      {/* Refund table */}
       {loading ? (
         <div className="loading">Loading...</div>
-      ) : sortedRefunds.length > 0 ? (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>
-                Datetime
-                <button className="sort-button2" onClick={toggleSortOrder}>
-                  {sortOrder === "asc" ? <ArrowUp className="sort-icon2" /> : <ArrowDown className="sort-icon2" />}
-                </button>
-              </th>
-              <th>Reason</th>
-              <th>Amount</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedRefunds.map((item) => (
-              <tr key={item.id}>
-                <td>{item.name || "N/A"}</td>
-                <td>{item.datetime || "N/A"}</td>
-                <td>{item.reason || "No reason provided"}</td>
-                <td>{formatCurrency(item.amount)}</td>
-                <td>
-                  <span className={`status ${item.status ? `status-${item.status.toLowerCase().replace(" ", "-")}` : ""}`}>
-                    {item.status || "Unknown"}
-                  </span>
-                </td>
-                <td>
-                  <button className="details-button" onClick={() => openModal(item)}>Details</button>
-                </td>
+      ) :
+        sortedRefunds.length > 0 ? (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>
+                  Datetime
+                  <button className="sort-button2" onClick={toggleSortOrder}>
+                    {sortOrder === "asc" ? <ArrowUp className="sort-icon2" /> : <ArrowDown className="sort-icon2" />}
+                  </button>
+                </th>
+                <th>Reason</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <div className="no-data">No refund requests found</div>
-      )}
+            </thead>
+            <tbody>
+              {sortedRefunds.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.user.name || "N/A"}</td>
+                  <td>{formatTimestamp(item.datetime_refund)}</td>
+                  <td>{item.reason_refund || "No reason provided"}</td>
+                  <td>{formatCurrency(item.amount)}</td>
+                  <td>
+                    <span className={`status ${item.status ? `status-${item.status.toLowerCase().replace(" ", "-")}` : ""}`}>
+                      {item.status || "Unknown"}
+                    </span>
+                  </td>
+                  <td>
+                    <button className="details-button" onClick={() => openModal(item)}>Details</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="no-data">No refund requests found</div>
+        )
+      }
 
       <div className="table-footer">
         <div className="data-info">Showing {sortedRefunds.length} requests</div>
       </div>
 
+      {/* Details modal */}
       {selectedRefund && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
+        <div className="modal-overlay2">
+          <div className="modal-content2">
+            <div className="modal-header2">
               <h3>Refund Request Details</h3>
-              <X className="close-icon" onClick={closeModal} />
+              <X className="close-icon2" onClick={closeModal} />
             </div>
 
             <div className="user-info">
-              <div className="avatar"></div>
-              <span>{selectedRefund.name || "N/A"}</span>
-              <span className="date-time">{selectedRefund.datetime || "N/A"}</span>
+              <img className="avatar" src={selectedRefund.user.profileImage} alt="Profile" />
+              <span>{selectedRefund.user.name || "N/A"}</span>
+              <span className="date-time">{formatTimestamp(selectedRefund.datetime_refund)}</span>
             </div>
 
-            <div className="modal-body">
+            <div className="modal-body2">
               <div className="info-row">
                 <div className="label">Field</div>
                 <div className="value">{selectedRefund.Field || "N/A"}</div>
@@ -220,7 +386,7 @@ const RefundRequest = () => {
 
               <div className="info-row">
                 <div className="label">Reason</div>
-                <div className="value">{selectedRefund.reason || "N/A"}</div>
+                <div className="value">{selectedRefund.reason_refund || "N/A"}</div>
               </div>
 
               <div className="divider"></div>
@@ -249,7 +415,7 @@ const RefundRequest = () => {
               </select>
             </div>
 
-            <div className="modal-footer">
+            <div className="modal-footer2">
               {!isAccepted && !isRejected && (
                 <>
                   <button className="reject-button" onClick={handleReject}>Reject</button>
@@ -259,9 +425,7 @@ const RefundRequest = () => {
             </div>
           </div>
         </div>
-        
       )}
-      
     </div>
   );
 };
