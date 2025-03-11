@@ -55,11 +55,11 @@
   color: #6B7280;
 }
 
-.status-dropdown {
+.status-dropdown2 {
   position: relative;
 }
 
-.status-button {
+.status-button2 {
   padding: 6px 32px 6px 12px;
   border: 1px solid #E5E7EB;
   border-radius: 6px;
@@ -179,7 +179,7 @@
   align-items: center; /* จัดให้อยู่ตรงกลางแนวตั้ง */
 }
 
-.modal-overlay {
+.modal-overlay2 {
   position: fixed;
   top: 0;
   left: 0;
@@ -192,12 +192,12 @@
   z-index: 1000;
 }
 
-.modal-content {
+.modal-content2 {
   position: relative;
   background: white;
   width: 70vw;
   max-width: 500px;
-  height: 90vh;
+  height: 85vh;
   padding: 1vh 2vw;
   border-radius: 15px;
   box-shadow: 0px 0px 12px rgba(54, 54, 54, 0.12);
@@ -206,14 +206,14 @@
   overflow: hidden;
 }
 
-.modal-header {
+.modal-header2 {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 10px;
 }
 
-.modal-header h3 {
+.modal-header2 h3 {
   font-family: 'Inter', sans-serif;
   font-weight: 600;
   font-size: 2.5vh;
@@ -221,26 +221,26 @@
   margin: 0;
 }
 
-.close-icon {
+.close-icon2 {
   cursor: pointer;
-  width: 20px;
-  height: 20px;
-  color: #D9D9D9;
+  width: 22px;
+  height: 22px;
+  color: #5f5858;
   border: 2px solid #D9D9D9;
   padding: 5px;
 }
 
-.modal-body {
+.modal-body2 {
   border: 1px solid #D9D9D9;
   border-radius: 15px;
   padding: 1vh;
   margin-bottom: 1vh;
   flex-grow: 1;
-  max-height: 45vh;
+  max-height: 46vh;
   
 }
 
-.modal-body .info-row {
+.modal-body2 .info-row {
   margin-bottom: 1vh;
   display: flex;
   flex-direction: column;
@@ -313,7 +313,7 @@
   background-color: #f1f9b9;
 }
 
-.modal-footer {
+.modal-footer2 {
   display: flex;
   justify-content: space-between;
   margin-top: 10px;
