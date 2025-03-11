@@ -21,7 +21,7 @@ body {
   display: flex;
   flex-direction: row;
   align-items: center;
-  
+
   padding: 10px 15px;
   gap: 20px;
   position: absolute;
@@ -40,8 +40,8 @@ body {
   height: 24px;
   font-style: normal;
   font-weight: 500;
-  font-size: 20px;
-  line-height: 24px;
+  font-size: 16px; /* Reduced from 20px */
+  line-height: 20px; /* Adjusted line height */
   color: #363636;
 }
 
@@ -67,8 +67,8 @@ body {
   height: 24px;
   font-style: normal;
   font-weight: 600;
-  font-size: 20px;
-  line-height: 24px;
+  font-size: 16px; /* Reduced from 20px */
+  line-height: 20px; /* Adjusted line height */
   color: #137400;
 }
 
@@ -113,8 +113,8 @@ body {
   height: 27px;
   font-style: normal;
   font-weight: 600;
-  font-size: 22px;
-  line-height: 27px;
+  font-size: 18px; /* Reduced from 22px */
+  line-height: 22px; /* Adjusted line height */
   color: #363636;
 }
 
@@ -131,14 +131,14 @@ body {
   gap: 10px;
   width: 132px;
   height: 44px;
-  background: #F9F9F9;
+  background: #f9f9f9;
   border-radius: 10px;
   cursor: pointer;
   border: none;
   font-style: normal;
   font-weight: 400;
-  font-size: 20px;
-  line-height: 24px;
+  font-size: 16px; /* Reduced from 20px */
+  line-height: 20px; /* Adjusted line height */
   color: rgba(54, 54, 54, 0.5);
 }
 
@@ -161,7 +161,7 @@ body {
   border: none;
   background: none;
   text-align: left;
-  font-size: 16px;
+  font-size: 14px; /* Reduced from 16px */
   color: #363636;
   cursor: pointer;
 }
@@ -174,8 +174,8 @@ body {
   height: 24px;
   font-style: normal;
   font-weight: 400;
-  font-size: 20px;
-  line-height: 24px;
+  font-size: 16px; /* Reduced from 20px */
+  line-height: 20px; /* Adjusted line height */
   color: rgba(54, 54, 54, 0.5);
 }
 
@@ -188,7 +188,7 @@ body {
 .table-header {
   width: 100%;
   height: 71px;
-  background: #F9F9F9;
+  background: #f9f9f9;
   border-radius: 15px;
   display: flex;
   align-items: center;
@@ -211,8 +211,8 @@ body {
 .header-cell span {
   font-style: normal;
   font-weight: 600;
-  font-size: 20px;
-  line-height: 24px;
+  font-size: 16px; /* Reduced from 20px */
+  line-height: 20px; /* Adjusted line height */
   color: #363636;
   white-space: nowrap; /* Prevent text wrapping */
 }
@@ -242,7 +242,7 @@ body {
   display: flex;
   align-items: center;
   padding: 0 20px;
-  border-bottom: 1px dashed #F9F9F9;
+  border-bottom: 1px dashed #f9f9f9;
 }
 
 .court-info {
@@ -258,7 +258,7 @@ body {
 .court-image {
   width: 59px;
   height: 59px;
-  background: #D9D9D9;
+  background: #d9d9d9;
   border-radius: 10px;
   flex-shrink: 0; /* Prevent image from shrinking */
 }
@@ -266,8 +266,8 @@ body {
 .court-name {
   font-style: normal;
   font-weight: 400;
-  font-size: 20px;
-  line-height: 24px;
+  font-size: 16px; /* Reduced from 20px */
+  line-height: 20px; /* Adjusted line height */
   color: #363636;
   white-space: nowrap;
   overflow: hidden;
@@ -282,8 +282,8 @@ body {
   width: calc(100% / 7); /* Equal width for all 7 columns */
   font-style: normal;
   font-weight: 400;
-  font-size: 20px;
-  line-height: 24px;
+  font-size: 16px; /* Reduced from 20px */
+  line-height: 20px; /* Adjusted line height */
   color: #363636;
   display: flex;
   align-items: center;
@@ -304,21 +304,21 @@ body {
   border-radius: 10px;
   font-style: normal;
   font-weight: 400;
-  font-size: 20px;
-  line-height: 24px;
+  font-size: 16px; /* Reduced from 20px */
+  line-height: 20px; /* Adjusted line height */
   flex: 1;
   width: calc(100% / 7); /* Equal width for all 7 columns */
   white-space: nowrap;
 }
 
 .court-status.available {
-  background: #EFF6EF;
-  color: #3D8639;
+  background: #eff6ef;
+  color: #3d8639;
 }
 
 .court-status.unavailable {
-  background: #FAF1F1;
-  color: #C84D48;
+  background: #faf1f1;
+  color: #c84d48;
 }
 
 .court-action {
@@ -337,12 +337,12 @@ body {
   padding: 10px 15px;
   width: 96px;
   height: 44px;
-  border: 1px solid #D9D9D9;
+  border: 1px solid #d9d9d9;
   border-radius: 10px;
   font-style: normal;
   font-weight: 500;
-  font-size: 20px;
-  line-height: 24px;
+  font-size: 16px; /* Reduced from 20px */
+  line-height: 20px; /* Adjusted line height */
   color: #363636;
   background: none;
   cursor: pointer;
@@ -362,8 +362,8 @@ body {
 .pagination-textkr {
   font-style: normal;
   font-weight: 500;
-  font-size: 18px;
-  line-height: 22px;
+  font-size: 14px; /* Reduced from 18px */
+  line-height: 18px; /* Adjusted line height */
   color: rgba(54, 54, 54, 0.5);
   white-space: nowrap;
 }
@@ -375,24 +375,18 @@ body {
 }
 
 .page-number {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  font-style: normal;
-  font-weight: 500;
-  font-size: 20px;
-  line-height: 24px;
-  color: rgba(54, 54, 54, 0.5);
-  background: #fafafa;
+  background: none;
+  border: none;
   cursor: pointer;
+  padding: 5px 10px;
+  margin: 0 2px;
+  border-radius: 4px;
+  font-size: 14px; /* Added font size */
 }
 
 .page-number.active {
-  background: #d9d9d9;
-  color: #363636;
+  background-color: #f0f0f0;
+  font-weight: bold;
 }
 
 .chevron-left,
@@ -441,7 +435,7 @@ body {
     gap: 15px;
     align-items: flex-start;
   }
-  
+
   .pagination-controlskr {
     width: 100%;
     justify-content: center;
@@ -478,4 +472,16 @@ body {
   }
 }
 
+.pagination-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 14px; /* Added font size */
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
