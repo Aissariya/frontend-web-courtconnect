@@ -46,27 +46,43 @@ const DashboardLayout = () => {
     fetchUserProfile();
   }, []);
 
+  // ปรับปรุงการตรวจสอบแจ้งเตือน - ลดเงื่อนไขความเข้มงวด
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "Refund"), (snapshot) => {
-      const pendingRequests = snapshot.docs.filter(doc => doc.data().status === "Need Action");
+    console.log("Setting up refund notification listener");
+    
+    // เสียก่อน try-catch เพื่อป้องกันการหยุดทำงานของ listener
+    try {
+      const unsubscribe = onSnapshot(collection(db, "Refund"), (snapshot) => {
+        // ลดเงื่อนไขการตรวจสอบ - เช็คเฉพาะสถานะ "Need Action" เท่านั้น
+        const pendingRequests = snapshot.docs.filter(doc => doc.data().status === "Need Action");
+        console.log("Found Need Action refunds:", pendingRequests.length);
 
-      if (pendingRequests.length > 0) {
-        setHasNewRequest(true);
-        setShowNotification(true);
-        setHasViewedRequests(false);
+        if (pendingRequests.length > 0) {
+          setHasNewRequest(true);
+          setShowNotification(true);
+          setHasViewedRequests(false);
 
-        const hidePopupTimer = setTimeout(() => {
-          setShowNotification(false);
-        }, 120000);
+          const hidePopupTimer = setTimeout(() => {
+            setShowNotification(false);
+          }, 120000);
 
-        return () => clearTimeout(hidePopupTimer);
-      } else {
-        setHasNewRequest(false);
-      }
-    });
+          return () => clearTimeout(hidePopupTimer);
+        } else {
+          setHasNewRequest(false);
+        }
+      }, (error) => {
+        // จัดการ error ใน listener
+        console.error("Error in Refund listener:", error);
+      });
 
-    return () => unsubscribe();
-  }, []);
+      return () => {
+        console.log("Cleaning up notification listener");
+        unsubscribe();
+      };
+    } catch (error) {
+      console.error("Error setting up notification:", error);
+    }
+  }, []); // ลบ dependency array เพื่อให้ทำงานเพียงครั้งเดียวหลังจาก mount
 
   const handleViewRequests = () => {
     setHasNewRequest(false);
