@@ -21,12 +21,13 @@ body {
   display: flex;
   flex-direction: row;
   align-items: center;
+  
   padding: 10px 15px;
   gap: 20px;
   position: absolute;
   width: 122px;
   height: 44px;
-  left: 41px;
+  left: 140px;
   top: 147px;
   border: 1px solid #d9d9d9;
   border-radius: 10px;
@@ -130,7 +131,7 @@ body {
   gap: 10px;
   width: 132px;
   height: 44px;
-  background: #f9f9f9;
+  background: #F9F9F9;
   border-radius: 10px;
   cursor: pointer;
   border: none;
@@ -187,7 +188,7 @@ body {
 .table-header {
   width: 100%;
   height: 71px;
-  background: #f9f9f9;
+  background: #F9F9F9;
   border-radius: 15px;
   display: flex;
   align-items: center;
@@ -203,6 +204,8 @@ body {
   gap: 10px;
   height: 34px;
   flex: 1;
+  width: calc(100% / 7); /* Equal width for all 7 columns */
+  justify-content: flex-start; /* Align content to the left */
 }
 
 .header-cell span {
@@ -211,6 +214,7 @@ body {
   font-size: 20px;
   line-height: 24px;
   color: #363636;
+  white-space: nowrap; /* Prevent text wrapping */
 }
 
 .with-sort {
@@ -238,7 +242,7 @@ body {
   display: flex;
   align-items: center;
   padding: 0 20px;
-  border-bottom: 1px dashed #f9f9f9;
+  border-bottom: 1px dashed #F9F9F9;
 }
 
 .court-info {
@@ -248,13 +252,15 @@ body {
   padding: 0px;
   gap: 15px;
   flex: 1;
+  width: calc(100% / 7); /* Equal width for all 7 columns */
 }
 
 .court-image {
   width: 59px;
   height: 59px;
-  background: #d9d9d9;
+  background: #D9D9D9;
   border-radius: 10px;
+  flex-shrink: 0; /* Prevent image from shrinking */
 }
 
 .court-name {
@@ -263,6 +269,9 @@ body {
   font-size: 20px;
   line-height: 24px;
   color: #363636;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .court-type,
@@ -270,6 +279,7 @@ body {
 .court-capacity,
 .court-booking-slots {
   flex: 1;
+  width: calc(100% / 7); /* Equal width for all 7 columns */
   font-style: normal;
   font-weight: 400;
   font-size: 20px;
@@ -277,6 +287,10 @@ body {
   color: #363636;
   display: flex;
   align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 10px;
 }
 
 .court-status {
@@ -293,21 +307,23 @@ body {
   font-size: 20px;
   line-height: 24px;
   flex: 1;
-  width: fit-content;
+  width: calc(100% / 7); /* Equal width for all 7 columns */
+  white-space: nowrap;
 }
 
 .court-status.available {
-  background: #eff6ef;
-  color: #3d8639;
+  background: #EFF6EF;
+  color: #3D8639;
 }
 
 .court-status.unavailable {
-  background: #faf1f1;
-  color: #c84d48;
+  background: #FAF1F1;
+  color: #C84D48;
 }
 
 .court-action {
   flex: 1;
+  width: calc(100% / 7); /* Equal width for all 7 columns */
   display: flex;
   justify-content: center;
 }
@@ -321,7 +337,7 @@ body {
   padding: 10px 15px;
   width: 96px;
   height: 44px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid #D9D9D9;
   border-radius: 10px;
   font-style: normal;
   font-weight: 500;
@@ -425,11 +441,15 @@ body {
     gap: 15px;
     align-items: flex-start;
   }
-
+  
   .pagination-controlskr {
     width: 100%;
     justify-content: center;
   }
+}
+
+.header-cell:last-child {
+  justify-content: center; /* Center the Action column */
 }
 
 @media (max-width: 700px) {
@@ -457,4 +477,5 @@ body {
     gap: 15px;
   }
 }
+
 
