@@ -1,9 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
-import Swal from 'sweetalert2';
-import './FieldManagementPage.css';
-import AddCourtForm from './AddCourtForm';
-import CourtDetailsModal from './CourtDetailsModal';
-import FilterButton from '../dashboard/FilterButton'
+import { useState, useRef, useEffect } from "react"
+import Swal from "sweetalert2"
+import { getFirestore, collection, getDocs, query, where } from "firebase/firestore"
+import "./FieldManagementPage.css"
+import AddCourtForm from "./AddCourtForm"
+import CourtDetailsModal from "./CourtDetailsModal"
+import FilterButton from "../dashboard/FilterButton"
+import firebaseApp from "../../firebaseConfig"
 
 function CourtManagement() {
   const [showAddCourtForm, setShowAddCourtForm] = useState(false)
@@ -11,9 +13,94 @@ function CourtManagement() {
   const [statusFilter, setStatusFilter] = useState(null)
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false)
   const [selectedCourt, setSelectedCourt] = useState(null)
-  const [selectedFields, setSelectedFields] = useState([]);
-  const [selectedCourtTypes, setSelectedCourtTypes] = useState([]);
+  const [selectedFields, setSelectedFields] = useState([])
+  const [selectedCourtTypes, setSelectedCourtTypes] = useState([])
+  const [courts, setCourts] = useState([])
+  const [timeslots, setTimeslots] = useState({})
+  const [loading, setLoading] = useState(true)
+  const [currentUser, setCurrentUser] = useState(null)
   const statusDropdownRef = useRef(null)
+
+  useEffect(() => {
+    const fetchUserAndCourts = async () => {
+      setLoading(true)
+      try {
+        const db = getFirestore(firebaseApp)
+
+        // First, fetch the current user's document
+        const usersCollection = collection(db, "users")
+        const usersSnapshot = await getDocs(usersCollection)
+        const userDoc = usersSnapshot.docs.find((doc) => {
+          const userData = doc.data()
+          // You might want to replace this with actual authentication
+          return userData.email === "napat.meu@ku.th" // For testing purposes
+        })
+
+        if (!userDoc) {
+          console.error("User not found")
+          setLoading(false)
+          return
+        }
+
+        const userData = userDoc.data()
+        setCurrentUser(userData)
+        console.log("Current user:", userData)
+
+        // Fetch timeslots
+        const timeslotsCollection = collection(db, "Timeslot")
+        const timeslotsSnapshot = await getDocs(timeslotsCollection)
+
+        const timeslotsData = {}
+        timeslotsSnapshot.docs.forEach((doc) => {
+          const data = doc.data()
+          if (data.court_id && data.available === "yes") {
+            if (!timeslotsData[data.court_id]) {
+              timeslotsData[data.court_id] = []
+            }
+            timeslotsData[data.court_id].push({
+              id: doc.id,
+              ...data,
+            })
+          }
+        })
+        setTimeslots(timeslotsData)
+
+        // Fetch courts for the current user
+        const courtsCollection = collection(db, "Court")
+        const courtsQuery = query(courtsCollection, where("user_id", "==", userData.user_id))
+        const courtsSnapshot = await getDocs(courtsQuery)
+
+        const courtsList = courtsSnapshot.docs.map((doc) => {
+          const data = doc.data()
+          const courtTimeslots = timeslotsData[data.court_id] || []
+
+          return {
+            id: doc.id,
+            name: data.field || "Unnamed Court",
+            type: data.court_type || "Unknown",
+            capacity: data.capacity || 0,
+            bookingSlots: data.bookingslot || 0,
+            status: data.status || "Available",
+            address: data.address,
+            court_id: data.court_id,
+            priceslot: data.priceslot,
+            user_id: data.user_id,
+            timeslots: courtTimeslots,
+          }
+        })
+
+        setCourts(courtsList)
+        console.log("Fetched courts for user:", courtsList)
+      } catch (error) {
+        console.error("Error fetching data:", error)
+        console.error("Error details:", error.code, error.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUserAndCourts()
+  }, [])
 
   const handleViewDetails = (court) => {
     setSelectedCourt(court)
@@ -24,10 +111,8 @@ function CourtManagement() {
   }
 
   const handleSaveStatus = (courtId, newStatus) => {
-    // Update court status in your data
     const updatedCourts = courts.map((court) => (court.id === courtId ? { ...court, status: newStatus } : court))
-
-    // In a real app, you would update your state or make an API call here
+    setCourts(updatedCourts) // Update the local state
     console.log("Updated courts:", updatedCourts)
 
     Swal.fire({
@@ -49,9 +134,9 @@ function CourtManagement() {
   }
 
   const handleApplyFilters = (fields, courtTypes) => {
-    setSelectedFields(fields);
-    setSelectedCourtTypes(courtTypes);
-  };
+    setSelectedFields(fields)
+    setSelectedCourtTypes(courtTypes)
+  }
 
   const handleAddCourt = () => {
     setShowAddCourtForm(true)
@@ -74,79 +159,17 @@ function CourtManagement() {
     }
   }, [])
 
-  const courts = [
-    {
-      id: 1,
-      name: "Alpha Court TH",
-      type: "Football",
-      hours: "13:00 - 23:00",
-      capacity: "22",
-      bookingSlots: "Hourly",
-      status: "Available",
-      days: ["Wed", "Sat", "Sun"],
-      price: "1,500",
-    },
-    {
-      id: 2,
-      name: "Beta Court TH",
-      type: "Basketball",
-      hours: "09:00 - 18:00",
-      capacity: "12",
-      bookingSlots: "Hourly",
-      status: "Available",
-      days: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-      price: "1,200",
-    },
-    {
-      id: 3,
-      name: "Gamma Court TH",
-      type: "Swim",
-      hours: "15:00 - 20:00",
-      capacity: "25",
-      bookingSlots: "30 minutes",
-      status: "Available",
-      days: ["Mon", "Wed", "Fri"],
-      price: "800",
-    },
-    {
-      id: 4,
-      name: "Lion Singto",
-      type: "Badminton",
-      hours: "17:30 - 23:30",
-      capacity: "22",
-      bookingSlots: "Hourly",
-      status: "Available",
-      days: ["Tue", "Thu", "Sat", "Sun"],
-      price: "1,000",
-    },
-    {
-      id: 5,
-      name: "Football Club",
-      type: "Yoga",
-      hours: "08:00 - 18:00",
-      capacity: "13",
-      bookingSlots: "Hourly",
-      status: "Unavailable",
-      days: ["Mon", "Wed", "Fri"],
-      price: "900",
-    },
-  ]
-
   const filteredCourts = courts.filter((court) => {
-    const matchesField = selectedFields.length === 0 || selectedFields.includes(court.name);
-    const matchesCourtType = selectedCourtTypes.length === 0 || selectedCourtTypes.includes(court.type);
-    const matchesStatus = !statusFilter || court.status === statusFilter;
-    return matchesField && matchesCourtType && matchesStatus;
-  });
+    const matchesField = selectedFields.length === 0 || selectedFields.includes(court.name)
+    const matchesCourtType = selectedCourtTypes.length === 0 || selectedCourtTypes.includes(court.type)
+    const matchesStatus = !statusFilter || court.status === statusFilter
+    return matchesField && matchesCourtType && matchesStatus
+  })
 
-  // const filteredCourts = statusFilter ? courts.filter((court) => court.status === statusFilter) : courts
-
-  // If showing add court form, render that component
   if (showAddCourtForm) {
     return <AddCourtForm onBack={handleBackFromAddCourt} />
   }
 
-  // Otherwise render the court management page
   return (
     <>
       <div className="court-management">
@@ -156,8 +179,9 @@ function CourtManagement() {
             <path d="M6.5 11.5H16.5" stroke="#363636" strokeWidth="2" strokeLinecap="round" />
             <path d="M8.5 15.5H14.5" stroke="#363636" strokeWidth="2" strokeLinecap="round" />
           </svg>
-          
-          <span><FilterButton onApplyFilters={handleApplyFilters} /></span>
+          <span>
+            <FilterButton onApplyFilters={handleApplyFilters} />
+          </span>
         </div>
 
         <div className="dashboard-button" onClick={handleAddCourt}>
@@ -191,7 +215,7 @@ function CourtManagement() {
                   />
                 </svg>
               </div>
-              <span className="topic-text">My Court</span>
+              <span className="topic-text">{currentUser ? `${currentUser.name}'s Courts` : "My Courts"}</span>
             </div>
 
             <div className="selection-dropdown" ref={statusDropdownRef}>
@@ -211,7 +235,6 @@ function CourtManagement() {
             </div>
           </div>
 
-          {/* Updated table structure with equal column widths */}
           <div className="table-container">
             <div className="table-header">
               <div className="header-cell with-sort">
@@ -228,7 +251,7 @@ function CourtManagement() {
                 <div className="sort-icon">
                   <svg width="10.51" height="15.76" viewBox="0 0 11 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M5.5 0L10 5H1L5.5 0Z" fill="rgba(54, 54, 54, 0.5)" />
-                    <path d="M5.5 16L1 11H10L5.5 16Z" fill="rgba(54, 54, 54, 0.5)" />
+                    <path d="M5.5 16L1 11H10L5.5 16Z" fill="rgba(54, 54, 0.5)" />
                   </svg>
                 </div>
               </div>
@@ -250,24 +273,48 @@ function CourtManagement() {
             </div>
 
             <div className="table-body">
-              {filteredCourts.map((court) => (
-                <div className="table-row" key={court.id}>
-                  <div className="court-info">
-                    <div className="court-image"></div>
-                    <span className="court-name">{court.name}</span>
+              {loading ? (
+                <div className="table-row" style={{ justifyContent: "center" }}>
+                  <div>Loading courts data...</div>
+                </div>
+              ) : courts.length > 0 ? (
+                filteredCourts.map((court) => (
+                  <div className="table-row" key={court.id}>
+                    <div className="court-info">
+                      <div className="court-image"></div>
+                      <span className="court-name">{court.name}</span>
+                    </div>
+                    <div className="court-type">{court.type}</div>
+                    <div className="court-hours" style={{ whiteSpace: "pre-line" }}>
+                      {court.timeslots.length > 0
+                        ? court.timeslots.map((slot, index) => (
+                            <div key={slot.id} className="time-slot">
+                              {`${slot.time_start} - ${slot.time_end}`}
+                              <br />
+                              {index < court.timeslots.length - 1 && <hr className="my-1" />}
+                            </div>
+                          ))
+                        : "No available hours"}
+                    </div>
+                    <div className="court-capacity">{court.capacity}</div>
+                    <div className="court-booking-slots">{court.bookingSlots}</div>
+                    <div className={`court-status ${court.status?.toLowerCase()}`}>{court.status || "N/A"}</div>
+                    <div className="court-action">
+                      <button className="action-button" onClick={() => handleViewDetails(court)}>
+                        Details
+                      </button>
+                    </div>
                   </div>
-                  <div className="court-type">{court.type}</div>
-                  <div className="court-hours">{court.hours}</div>
-                  <div className="court-capacity">{court.capacity}</div>
-                  <div className="court-booking-slots">{court.bookingSlots}</div>
-                  <div className={`court-status ${court.status.toLowerCase()}`}>{court.status}</div>
-                  <div className="court-action">
-                    <button className="action-button" onClick={() => handleViewDetails(court)}>
-                      Details
-                    </button>
+                ))
+              ) : (
+                <div className="table-row" style={{ justifyContent: "center" }}>
+                  <div>
+                    {currentUser
+                      ? "No courts found for your account. Add a court to get started."
+                      : "Please sign in to view your courts."}
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
