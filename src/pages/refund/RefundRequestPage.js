@@ -4,7 +4,7 @@ import { db } from '../../firebaseConfig';
 import { ChevronDown, ChevronLeft, X, ArrowUp, ArrowDown } from "lucide-react";
 import "./RefundRequest.css";
 
-const RefundRequest = () => {
+const RefundRequest = ({ currentUser }) => {
   const [error, setError] = useState("");
   const [refunds, setRefunds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,12 +16,91 @@ const RefundRequest = () => {
   const [sortOrder, setSortOrder] = useState("asc");
 
   useEffect(() => {
+    // ใช้ user_id จาก currentUser หรือเป็นค่า default สำหรับการทดสอบ
+    const currentUserId = currentUser?.user_id || "COS0501";
+
     const unsubscribe = onSnapshot(collection(db, "Refund"), async (snapshot) => {
       try {
         const refundData = await Promise.all(snapshot.docs.map(async (refundDoc) => {
           const refund = { id: refundDoc.id, ...refundDoc.data() };
 
-          // Fetch user data for name and profile image using where() query
+          // 1. เช็คข้อมูล Booking ที่ตรงกัน
+          const bookingQuery = query(collection(db, "Booking"), where("booking_id", "==", refund.booking_id));
+          const bookingSnapshot = await getDocs(bookingQuery);
+
+          if (bookingSnapshot.empty) {
+            console.log(`No matching booking found for booking_id: ${refund.booking_id}`);
+            return null; // ไม่พบข้อมูล Booking ที่ตรงกัน
+          }
+
+          const bookingData = bookingSnapshot.docs[0].data();
+          
+          // 2. เช็คข้อมูล Court ที่ตรงกัน
+          if (!bookingData.court_id) {
+            console.log(`Booking doesn't have court_id: ${refund.booking_id}`);
+            return null; // ไม่มี court_id ในข้อมูล Booking
+          }
+          
+          const courtQuery = query(collection(db, "Court"), where("court_id", "==", bookingData.court_id));
+          const courtSnapshot = await getDocs(courtQuery);
+
+          if (courtSnapshot.empty) {
+            console.log(`No matching court found for court_id: ${bookingData.court_id}`);
+            return null; // ไม่พบข้อมูล Court ที่ตรงกัน
+          }
+
+          // 3. เช็ค user_id ว่าตรงกับผู้ใช้ที่ login หรือไม่
+          if (bookingData.user_id !== currentUserId) {
+            console.log(`Booking user_id (${bookingData.user_id}) doesn't match current user (${currentUserId})`);
+            return null; // user_id ไม่ตรงกับผู้ใช้ที่ login
+          }
+
+          const courtData = courtSnapshot.docs[0].data();
+          
+          // ดึงข้อมูลและฟอร์แมตตามต้องการ
+          refund.Court = courtData.court_type || "N/A";
+          refund.Field = courtData.field || "N/A";
+
+          // ฟอร์แมตวันที่และเวลา
+          if (bookingData.start_time && bookingData.end_time) {
+            const startDate = new Date(bookingData.start_time.seconds * 1000);
+            const endDate = new Date(bookingData.end_time.seconds * 1000);
+
+            // ฟอร์แมตวันที่
+            refund.Date = startDate.toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            });
+
+            // ฟอร์แมตเวลา
+            const formatTime = (date) => {
+              return date.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              });
+            };
+
+            refund.Time = `${formatTime(startDate)} - ${formatTime(endDate)}`;
+
+            // คำนวณจำนวนเงิน
+            if (courtData.bookingslot && courtData.priceslot) {
+              const startTime = startDate.getTime();
+              const endTime = endDate.getTime();
+              const durationInMinutes = (endTime - startTime) / (1000 * 60);
+              const slots = Math.ceil(durationInMinutes / courtData.bookingslot);
+              refund.amount = slots * courtData.priceslot;
+            } else {
+              refund.amount = 0;
+            }
+          } else {
+            refund.Date = "N/A";
+            refund.Time = "N/A";
+            refund.amount = 0;
+          }
+
+          // ดึงข้อมูลผู้ใช้
           const usersQuery = query(collection(db, "users"), where("user_id", "==", refund.user_id));
           const usersSnapshot = await getDocs(usersQuery);
           let userName = "N/A";
@@ -38,85 +117,13 @@ const RefundRequest = () => {
             profileImage: userProfileImage,
           };
 
-          // Fetch booking data using where() query
-          const bookingQuery = query(collection(db, "Booking"), where("booking_id", "==", refund.booking_id));
-          const bookingSnapshot = await getDocs(bookingQuery);
-
-          if (!bookingSnapshot.empty) {
-            const bookingData = bookingSnapshot.docs[0].data();
-
-            // Format date and time for display
-            if (bookingData.start_time && bookingData.end_time) {
-              const startDate = new Date(bookingData.start_time.seconds * 1000);
-              const endDate = new Date(bookingData.end_time.seconds * 1000);
-
-              // Format date (e.g., "Jan 1, 2025")
-              refund.Date = startDate.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-              });
-
-              // Format time (e.g., "13:00 - 15:00")
-              const formatTime = (date) => {
-                return date.toLocaleTimeString('en-US', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: false
-                });
-              };
-
-              refund.Time = `${formatTime(startDate)} - ${formatTime(endDate)}`;
-
-              // Calculate amount based on booking duration and court rates
-              if (bookingData.court_id) {
-                // Fetch court data using where() query
-                const courtQuery = query(collection(db, "Court"), where("court_id", "==", bookingData.court_id));
-                const courtSnapshot = await getDocs(courtQuery);
-
-                if (!courtSnapshot.empty) {
-                  const courtData = courtSnapshot.docs[0].data();
-                  refund.Field = courtData.field || "N/A";
-                  refund.Court = courtData.court_type || "N/A";
-
-                  // Calculate the price based on booking duration and court rates
-                  if (courtData.bookingslot && courtData.priceslot) {
-                    const startTime = startDate.getTime();
-                    const endTime = endDate.getTime();
-                    const durationInMinutes = (endTime - startTime) / (1000 * 60);
-                    const slots = Math.ceil(durationInMinutes / courtData.bookingslot);
-                    refund.amount = slots * courtData.priceslot;
-                  } else {
-                    refund.amount = 0;
-                    console.error('Missing bookingslot or priceslot in court data:', courtData);
-                  }
-                } else {
-                  refund.Field = "N/A";
-                  refund.Court = "N/A";
-                  refund.amount = 0;
-                }
-              } else {
-                refund.Field = "N/A";
-                refund.Court = "N/A";
-                refund.amount = 0;
-              }
-            } else {
-              refund.Date = "N/A";
-              refund.Time = "N/A";
-              refund.amount = 0;
-            }
-          } else {
-            refund.Date = "N/A";
-            refund.Time = "N/A";
-            refund.Field = "N/A";
-            refund.Court = "N/A";
-            refund.amount = 0;
-          }
-
           return refund;
         }));
 
-        setRefunds(refundData);
+        // กรองข้อมูล null ออก (กรณีที่ไม่พบข้อมูลที่ตรงตามเงื่อนไข)
+        const filteredRefundData = refundData.filter(item => item !== null);
+        
+        setRefunds(filteredRefundData);
         setLoading(false);
       } catch (err) {
         setError("Error loading data. Please try again later.");
@@ -130,11 +137,10 @@ const RefundRequest = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [currentUser]);
 
-  if (loading) return <p>Loading data...</p>;
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
-
+  // ส่วนที่เหลือของโค้ดเหมือนเดิม (formatCurrency, formatTimestamp, openModal, closeModal, handleAccept, handleReject, ฯลฯ)
+  
   // Format currency
   const formatCurrency = (amount) => {
     return `฿${amount ? amount.toFixed(2) : "0.00"}`;
