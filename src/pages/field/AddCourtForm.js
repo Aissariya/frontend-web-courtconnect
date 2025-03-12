@@ -1,6 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import './AddCourtForm.css';
+import { collection, getDoc, updateDoc, doc, addDoc, getFirestore, setDoc, Timestamp } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db } from '../../firebaseConfig';
+import { onSnapshot } from "firebase/firestore";
+import useAuth from '../../hooks/useAuth';
+import { getAuth } from 'firebase/auth';
 
 function AddCourtForm({ onBack }) {
   // Sample existing fields for the dropdown
@@ -11,6 +17,14 @@ function AddCourtForm({ onBack }) {
     "Lion Singto",
     "Football Club"
   ];
+  const { user } = useAuth();
+  const [userId, setUserId] = useState(null);
+  
+
+  // Firebase instances
+  const auth = getAuth();
+  const db = getFirestore();
+  const storage = getStorage();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -31,8 +45,70 @@ function AddCourtForm({ onBack }) {
     bookingSlots: '',
     status: '',
     address: '',
-    price: ''
+    price: '',
+    startTime: '',  //  เพิ่ม startTime
+    endTime: '',    //  เพิ่ม endTime
+    image: []
   });
+  const [selectedImages, setSelectedImages] = useState([]);
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      if (user) {
+        try {
+          const userDocRef = doc(db, "users", user.uid); // 🔹 อ้างอิงเอกสารของ user ที่ล็อกอิน
+          const userDocSnap = await getDoc(userDocRef);
+
+          if (userDocSnap.exists()) {
+            setUserId(userDocSnap.data().user_id); // 🔹 ดึง user_id จาก Firestore
+          } else {
+            console.error("No user document found!");
+          }
+        } catch (error) {
+          console.error("Error fetching user document: ", error);
+        }
+      }
+    };
+
+    fetchUserId();
+  }, [user]); //  เรียกใช้ useEffect เมื่อ user เปลี่ยนแปลง
+
+  const uploadImagesToFirebase = async (images) => {
+    const urls = [];
+    for (let i = 0; i < images.length; i++) {
+      const image = images[i];
+      const imageRef = ref(storage, `court_images/${Date.now()}_${image.name}`);
+      await uploadBytes(imageRef, image);
+      const downloadURL = await getDownloadURL(imageRef);
+      urls.push(downloadURL);
+    }
+    return urls;
+  };
+
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files); //  รับไฟล์ทั้งหมดที่ผู้ใช้เลือก
+    if (!e.target.files || e.target.files.length === 0) {
+      console.error("No files selected!"); //  แจ้งเตือนใน console ถ้าไม่มีไฟล์
+      return;
+    }
+  
+    const file = files[0]; //  ใช้ไฟล์แรกสำหรับ Preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setProfileImage(e.target.result); //  แสดง Preview ของรูป
+    };
+    reader.readAsDataURL(file); //  แปลงเป็น Base64 เพื่อแสดงใน UI
+  
+    setSelectedImages(files); //  เก็บไฟล์ทั้งหมดเพื่ออัปโหลดไป Firebase
+  };
+  
+  const generateTimeOptions = () => {
+    return Array.from({ length: 24 }, (_, i) => {
+      const formattedTime = i.toString().padStart(2, '0') + ":00"; // แปลงเป็น 00:00, 01:00, ..., 23:00
+      return <option key={i} value={i}>{formattedTime}</option>;
+    });
+  };
+  
 
   const [profileImage, setProfileImage] = useState(null);
 
@@ -80,18 +156,7 @@ function AddCourtForm({ onBack }) {
     });
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfileImage(e.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Form validation
@@ -107,19 +172,101 @@ function AddCourtForm({ onBack }) {
       });
       return;
     }
-    
-    // Form submission success
-    Swal.fire({
-      title: 'Success!',
-      text: 'Court has been added successfully',
-      icon: 'success',
-      confirmButtonText: 'OK',
-      confirmButtonColor: '#A2F193'
-    }).then(() => {
-      onBack();
-    });
-  };
+    if (selectedImages.length === 0) {  // ตรวจสอบว่ามีไฟล์ก่อนอัปโหลด
+      Swal.fire({ title: 'Error!', text: 'Please select at least one image.', icon: 'error' });
+      return;
+    }
+    const bookingSlotMap = {
+      'Hourly': 60,
+      '2 hours': 120,
+      '30 minutes': 30
+    };
+    if (formData.startTime === '' || formData.endTime === '') {
+      Swal.fire({ title: 'Error!', text: 'Please select start and end time.', icon: 'error' });
+      return;
+    }
+    const startHour = Number(formData.startTime);
+    const endHour = Number(formData.endTime);
 
+    if (isNaN(startHour) || isNaN(endHour)) {
+      Swal.fire({ title: 'Error!', text: 'Invalid time format.', icon: 'error' });
+      return;
+    }
+
+    // สร้าง Date Object อย่างถูกต้อง
+    const today = new Date();
+    const startDate = new Date(today);
+    const endDate = new Date(today);
+    startDate.setHours(startHour, 0, 0, 0);
+    endDate.setHours(endHour, 0, 0, 0);
+
+    // console.log("Start Date:", startDate); //debug timestamp
+    // console.log("End Date:", endDate);
+
+    // ตรวจสอบว่า startDate และ endDate เป็น Date จริง
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      console.error("Invalid Date object");
+      return;
+    }
+
+    const startTimestamp = Timestamp.fromDate(startDate);
+    const endTimestamp = Timestamp.fromDate(endDate);
+
+    try {
+      const imageURLs = await uploadImagesToFirebase(selectedImages);
+      const courtId = doc(collection(db, "Court")).id;
+
+      const docRef = await addDoc(collection(db, "Court"), {
+        address: formData.address,
+        bookingslot: bookingSlotMap[formData.bookingSlots] || 60,
+        court_type: formData.type,
+        field: fieldName,
+        priceslot: Number(formData.price),
+        user_id: userId,
+        capacity: Number(formData.capacity),
+        court_id: courtId,
+        image: imageURLs
+      });
+
+      // แปลงวันที่ให้เป็น boolean
+      const availableDays = {
+        Mon: formData.availableDays.Mon || false,
+        Tue: formData.availableDays.Tue || false,
+        Wed: formData.availableDays.Wed || false,
+        Thu: formData.availableDays.Thu || false,
+        Fri: formData.availableDays.Fri || false,
+        Sat: formData.availableDays.Sat || false,
+        Sun: formData.availableDays.Sun || false
+      };
+
+      await addDoc(collection(db, "Timeslot"), {
+        available: Boolean(true),
+        court_id: courtId,
+        availableDays: availableDays,
+        time_start: startTimestamp,
+        time_end: endTimestamp
+      });
+      Swal.fire({
+        title: 'Success!',
+        text: 'Court has been added successfully',
+        icon: 'success',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#A2F193'
+      }).then(() => {
+        onBack();
+      });
+    } catch (error) {
+      console.error("Error adding document: ", error);
+      Swal.fire({
+        title: 'Error!',
+        text: 'Failed to add court. Please try again.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#A2F193'
+      });
+    }
+  };
+  
   const handleCancel = () => {
     onBack();
   };
@@ -224,6 +371,9 @@ function AddCourtForm({ onBack }) {
                 <option value="Badminton">Badminton</option>
                 <option value="Swim">Swim</option>
                 <option value="Yoga">Yoga</option>
+                <option value="Ping Pong">Ping Pong</option>
+                <option value="Boxing">Boxing</option>
+                <option value="Aerobic">Aerobic</option>
               </select>
               <div className="lucide-chevron-down-dropdown">
                 <svg width="16" height="16" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -310,13 +460,9 @@ function AddCourtForm({ onBack }) {
                     className="hug-content" 
                     name="startTime"
                     value={formData.startTime}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">09:00</option>
-                    <option value="08:00">08:00</option>
-                    <option value="09:00">09:00</option>
-                    <option value="10:00">10:00</option>
-                    <option value="11:00">11:00</option>
+                    onChange={handleInputChange}>
+                    <option value="">Select Start Time</option>
+                    {generateTimeOptions()}
                   </select>
                   <div className="lucide-chevron-down-dropdown">
                     <svg width="16" height="16" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -335,13 +481,9 @@ function AddCourtForm({ onBack }) {
                     className="hug-content" 
                     name="endTime"
                     value={formData.endTime}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">23:00</option>
-                    <option value="17:00">17:00</option>
-                    <option value="18:00">18:00</option>
-                    <option value="20:00">20:00</option>
-                    <option value="23:00">23:00</option>
+                    onChange={handleInputChange}>
+                    <option value="">Select End Time</option>
+                    {generateTimeOptions()}
                   </select>
                   <div className="lucide-chevron-down-dropdown">
                     <svg width="16" height="16" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -414,6 +556,7 @@ function AddCourtForm({ onBack }) {
               <input 
                 type="file" 
                 id="court-image" 
+                multiple 
                 accept="image/*" 
                 onChange={handleImageUpload}
                 style={{ display: 'none' }}
