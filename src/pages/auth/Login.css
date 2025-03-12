@@ -2,6 +2,7 @@
 .login-page-container {
   display: flex;
   height: 100vh;
+  overflow: hidden; /* ปิดการเลื่อนแค่หน้า Login */
 }
 
 /* Sidebar (Left) */
@@ -16,76 +17,106 @@
   height: 100vh;
 }
 
-
+/* ทำให้ Form อยู่ตรงกลาง */
+.login-sidebar form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
 
 /* โลโก้ */
 .login-logo {
   width: 270px;
   margin-top: 10px;
-  margin-bottom: 140px;
+  margin-bottom: 100px; /* ลดลงจาก 140px */
 }
 
 /* Input Fields */
 .login-input-email {
   position: relative;
-  width: 100%;
+  width: 80%;
   display: flex;
   align-items: center;
-  margin-top: -100px;
-  margin-bottom: 100px;
+  justify-content: center;
+  margin-top: -80px; /* ลดลงจาก -100px */
+  margin-bottom: 60px; /* ลดลงจาก 100px */
+  margin-left: auto;
+  margin-right: auto;
 }
-
 
 .login-input-password {
   position: relative;
-  width: 100%;
+  width: 80%;
   display: flex;
   align-items: center;
-  margin-top: -80px;
-  margin-bottom: 100px;
+  justify-content: center;
+  margin-top: -40px; /* ลดลงจาก -80px */
+  margin-bottom: 60px; /* ลดลงจาก 100px */
+  margin-left: auto;
+  margin-right: auto;
 }
-
-
 
 .login-icon {
   position: absolute;
   left: 10px;
   color: white;
+  z-index: 1;
 }
 
 .login-input {
-  width: 120%;
-  padding: 13px 40px;
+  width: 75%; /* ลดลงจาก 100% */
+  padding: 12px 38px; /* ลดลงจาก 10px */
   border-radius: 8px;
   font-size: 15px;
   background-color: #1a1a1a;
   color: white;
   border: none;
   outline: none;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Error message styles */
 .login-error-text {
   color: red;
   font-size: 12px;
-  margin-top: -90px;
-  margin-bottom: 100px;
+  margin-top: -50px; /* ลดลงจาก -90px */
+  margin-bottom: 60px; /* ลดลงจาก 100px */
   text-align: left;
   width: 60%;
+  align-self: center;
 }
 
 /* Toggle Password Visibility */
 .login-toggle-password {
   position: absolute;
-  right: 10px;
+  right: 15%;
   cursor: pointer;
   color: white;
+  z-index: 1;
+  transition: color 0.3s;
+}
+
+.login-toggle-password:hover {
+  color: #a2f193;
+}
+
+/* เพิ่ม animation สำหรับ toggle */
+.login-toggle-password {
+  opacity: 0.7;
+  transition: opacity 0.3s, transform 0.2s;
+}
+
+.login-toggle-password:hover {
+  opacity: 1;
+  transform: scale(1.1);
 }
 
 /* Sign In Button */
 .login-sign-in-button {
-  width: 100%;
-  padding: 14px;
+  width: 60%; /* ลดลงจาก 80% */
+  padding: 10px; /* ลดลงจาก 10px */
   background-color: #a2f193;
   color: rgb(12, 103, 50);
   font-size: 16px;
@@ -95,8 +126,10 @@
   cursor: pointer;
   transition: background-color 0.3s ease;
   position: relative;
-  top: -60px;
- 
+  top: -40px; /* ลดลงจาก -60px */
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* ปิดปุ่มเมื่อข้อมูลไม่ครบ */
@@ -107,7 +140,7 @@
 
 .login-forgot-password,
 .login-create-account {
-  margin-top: -10px;
+  margin-top: 10px;
   margin-bottom: 20px;
   color: #000000;
   cursor: pointer;
@@ -130,17 +163,61 @@
   object-fit: cover;
 }
 
-.login-page-container {
-  overflow: hidden; /* ปิดการเลื่อนแค่หน้า Login */
-  height: 100vh;
-}
-
-
 .login-forgot-password:hover {
   text-decoration: underline;
 }
 
-
 .login-create-account-link:hover {
   text-decoration: underline;
+}
+
+/* เพิ่มการแสดง/ซ่อนอินพุท */
+.login-input-container {
+  position: relative;
+  width: 100%;
+}
+
+/* สไตล์สำหรับปุ่มแสดง/ซ่อนใน input field */
+.input-toggle-visibility {
+  position: absolute;
+  right: 15%;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: white;
+  z-index: 2;
+  background: none;
+  border: none;
+  outline: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.input-toggle-visibility:hover {
+  color: #a2f193;
+}
+
+/* เพิ่ม animation เมื่อแสดง/ซ่อน */
+.login-input.visible {
+  animation: pulse 0.3s ease;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(162, 241, 147, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 5px rgba(162, 241, 147, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(162, 241, 147, 0);
+  }
+}
+
+/* เพิ่มเสริม icon style เพื่อให้เห็นชัดเจนขึ้น */
+.login-toggle-password svg {
+  filter: drop-shadow(0px 0px 1px rgba(255, 255, 255, 0.5));
 }

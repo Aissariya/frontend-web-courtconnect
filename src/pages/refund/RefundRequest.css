@@ -366,3 +366,72 @@
   color: #000000; 
 }
 
+.table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-top: 1px solid #E5E7EB;
+}
+
+.data-info {
+  font-size: 14px;
+  color: #6B7280;
+}
+
+/* Pagination Controls */
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  background-color: white;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-button:hover:not(.disabled) {
+  background-color: #F3F4F6;
+  border-color: #D1D5DB;
+}
+
+.pagination-button.disabled {
+  color: #D1D5DB;
+  cursor: not-allowed;
+}
+
+.pagination-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  background-color: white;
+  color: #374151;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-number:hover {
+  background-color: #F3F4F6;
+  border-color: #D1D5DB;
+}
+
+.pagination-number.active {
+  background-color: #a9a9a9;
+  color: white;
+  border-color: #a9a9a9;
+}

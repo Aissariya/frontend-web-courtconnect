@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
+<<<<<<< Updated upstream
 import { collection, getDocs, updateDoc, doc, where, query, onSnapshot } from "firebase/firestore";
+=======
+import { collection, getDocs, updateDoc, doc, where, query, onSnapshot, getDoc, addDoc, orderBy, limit } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+>>>>>>> Stashed changes
 import { db } from '../../firebaseConfig';
-import { ChevronDown, ChevronLeft, X, ArrowUp, ArrowDown } from "lucide-react";
+import { ChevronDown, ChevronLeft, X, ArrowUp, ArrowDown, ChevronRight } from "lucide-react";
 import "./RefundRequest.css";
 
 const RefundRequest = () => {
@@ -14,6 +19,12 @@ const RefundRequest = () => {
   const [isAccepted, setIsAccepted] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
+<<<<<<< Updated upstream
+=======
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(7);
+  const auth = getAuth();
+>>>>>>> Stashed changes
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "Refund"), async (snapshot) => {
@@ -209,23 +220,163 @@ const RefundRequest = () => {
   // Handle accept/reject actions
   const handleAccept = async () => {
     if (selectedRefund) {
-      const refundRef = doc(db, "Refund", selectedRefund.id);
-      await updateDoc(refundRef, {
-        status: "Accepted",
-        reason_reject: null
-      });
-      setRefunds((prevRefunds) => prevRefunds.map((refund) =>
-        refund.id === selectedRefund.id
-          ? {
-            ...refund,
-            status: "Accepted",
-            reason_reject: null
+      try {
+        // 1. Update the Refund document status
+        const refundRef = doc(db, "Refund", selectedRefund.id);
+        await updateDoc(refundRef, {
+          status: "Accepted",
+          reason_reject: null
+        });
+  
+        // 2. Find and update the corresponding Booking document
+        const bookingId = selectedRefund.booking_id;
+        if (bookingId) {
+          // Query to find the booking with matching booking_id
+          const bookingQuery = query(collection(db, "Booking"), where("booking_id", "==", bookingId));
+          const bookingSnapshot = await getDocs(bookingQuery);
+  
+          if (!bookingSnapshot.empty) {
+            // Get the first matching booking document
+            const bookingDoc = bookingSnapshot.docs[0];
+            const bookingRef = doc(db, "Booking", bookingDoc.id);
+  
+            // Update the booking status to "cancelled"
+            await updateDoc(bookingRef, {
+              status: "cancelled"
+            });
+  
+            console.log(`Updated booking ${bookingId} status to cancelled`);
+          } else {
+            console.log(`No booking found with booking_id: ${bookingId}`);
           }
-          : refund
-      ));
-      setIsAccepted(true);
-      setRejectionReason("");
-      closeModal();
+        }
+  
+        // 3. Process refund payment - Transfer money to customer
+        const customerUserId = selectedRefund.user_id;
+        if (customerUserId) {
+          try {
+            // Find customer's wallet_id
+            const customerQuery = query(collection(db, "users"), where("user_id", "==", customerUserId));
+            const customerSnapshot = await getDocs(customerQuery);
+  
+            if (!customerSnapshot.empty) {
+              const customerData = customerSnapshot.docs[0].data();
+              const customerWalletId = customerData.wallet_id;
+  
+              if (customerWalletId) {
+                // Find customer's wallet document
+                const walletQuery = query(collection(db, "Wallet"), where("wallet_id", "==", customerWalletId));
+                const walletSnapshot = await getDocs(walletQuery);
+  
+                if (!walletSnapshot.empty) {
+                  // Get the customer's wallet document
+                  const walletDoc = walletSnapshot.docs[0];
+                  const walletRef = doc(db, "Wallet", walletDoc.id);
+                  const walletData = walletDoc.data();
+  
+                  // Calculate new balance
+                  const currentBalance = walletData.balance || 0;
+                  const refundAmount = selectedRefund.amount || 0;
+                  const newBalance = currentBalance + refundAmount;
+  
+                  // Update customer's wallet
+                  await updateDoc(walletRef, {
+                    amount: refundAmount,
+                    balance: newBalance,
+                    create_at: new Date(), // Current timestamp
+                    status: "tranfer_in"
+                  });
+  
+                  console.log(`Updated customer wallet: ${customerWalletId}. Added ${refundAmount} to balance.`);
+                } else {
+                  console.log(`No wallet found for customer with wallet_id: ${customerWalletId}`);
+                }
+              } else {
+                console.log(`Customer ${customerUserId} does not have a wallet_id`);
+              }
+            } else {
+              console.log(`No user found with user_id: ${customerUserId}`);
+            }
+          } catch (error) {
+            console.error("Error processing customer refund:", error);
+          }
+        }
+  
+        // 4. Deduct money from court owner's wallet
+        try {
+          // Get the current logged-in user
+          const currentUser = auth.currentUser;
+          if (currentUser) {
+            // Get user data
+            const userDocRef = doc(db, 'users', currentUser.uid);
+            const userDoc = await getDoc(userDocRef);
+  
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              const ownerWalletId = userData.wallet_id;
+  
+              const walletRef = collection(db, "Wallet");
+              const walletSnapshot = await getDocs(query(walletRef, where("wallet_id", "==", ownerWalletId)));
+  
+                // const ownerWalletSnapshot = await getDocs(ownerWalletQuery);
+  
+                let latestBalance = 0;
+                if (!walletSnapshot.empty) {
+                  // แปลงข้อมูลเป็น array แล้วเรียงลำดับตาม create_at ด้วย JavaScript
+                  const walletDocs = walletSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                  walletDocs.sort((a, b) => new Date(b.create_at.seconds * 1000) - new Date(a.create_at.seconds * 1000));
+                
+                  const latestWalletData = walletDocs[0]; // เอาข้อมูลล่าสุด
+                  const latestBalance = latestWalletData.balance || 0;
+                
+                  console.log("Latest Wallet Balance:", latestBalance);
+                
+                  // อัปเดตยอดเงินหลังจากคืนเงินให้ลูกค้า
+                  const refundAmount = selectedRefund.amount || 0;
+                  const newBalance = latestBalance - refundAmount;
+              
+  
+                // Add new wallet document for the court owner
+                await addDoc(collection(db, "Wallet"), {
+                  wallet_id: ownerWalletId,
+                  amount: refundAmount,
+                  balance: newBalance,
+                  create_at: new Date(), // Current timestamp
+                  status: "tranfer_out"
+                });
+  
+                console.log(`Created new wallet record for owner. Deducted ${refundAmount} from balance.`);
+              } else {
+                console.log(`Court owner does not have a wallet_id`);
+              }
+            } else {
+              console.log(`No user document found for the current user`);
+            }
+          } else {
+            console.log(`No user is currently logged in`);
+          }
+        } catch (error) {
+          console.error("Error processing owner deduction:", error);
+        }
+  
+        // 5. Update the UI state
+        setRefunds((prevRefunds) => prevRefunds.map((refund) =>
+          refund.id === selectedRefund.id
+            ? {
+              ...refund,
+              status: "Accepted",
+              reason_reject: null
+            }
+            : refund
+        ));
+  
+        setIsAccepted(true);
+        setRejectionReason("");
+        closeModal();
+      } catch (error) {
+        console.error("Error accepting refund request:", error);
+        alert("Failed to process refund request. Please try again.");
+      }
     }
   };
 
@@ -265,6 +416,17 @@ const RefundRequest = () => {
       new Date(0);
     return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
   });
+
+  // Pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = sortedRefunds.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedRefunds.length / itemsPerPage);
+
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const nextPage = () => setCurrentPage(prev => prev < totalPages ? prev + 1 : prev);
+  const prevPage = () => setCurrentPage(prev => prev > 1 ? prev - 1 : prev);
 
   // Toggle sort order
   const toggleSortOrder = () => {
@@ -313,7 +475,7 @@ const RefundRequest = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedRefunds.map((item) => (
+              {currentItems.map((item) => (
                 <tr key={item.id}>
                   <td>{item.user.name || "N/A"}</td>
                   <td>{formatTimestamp(item.datetime_refund)}</td>
@@ -337,7 +499,38 @@ const RefundRequest = () => {
       }
 
       <div className="table-footer">
-        <div className="data-info">Showing {sortedRefunds.length} requests</div>
+        <div className="data-info">Showing {currentItems.length} of {sortedRefunds.length} requests</div>
+        
+        {/* Pagination */}
+        {sortedRefunds.length > 0 && (
+          <div className="pagination-controls">
+            <button 
+              onClick={prevPage} 
+              disabled={currentPage === 1}
+              className={`pagination-button ${currentPage === 1 ? 'disabled' : ''}`}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i + 1}
+                onClick={() => paginate(i + 1)}
+                className={`pagination-number ${currentPage === i + 1 ? 'active' : ''}`}
+              >
+                {i + 1}
+              </button>
+            ))}
+            
+            <button 
+              onClick={nextPage} 
+              disabled={currentPage === totalPages}
+              className={`pagination-button ${currentPage === totalPages ? 'disabled' : ''}`}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Details modal */}
