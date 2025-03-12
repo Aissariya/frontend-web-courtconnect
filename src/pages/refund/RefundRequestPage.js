@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { collection, getDocs, updateDoc, doc, where, query, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, updateDoc, doc, where, query, onSnapshot, getDoc } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { db } from '../../firebaseConfig';
 import { ChevronDown, ChevronLeft, X, ArrowUp, ArrowDown } from "lucide-react";
 import "./RefundRequest.css";
 
-const RefundRequest = ({ currentUser }) => {
+const RefundRequest = () => {
   const [error, setError] = useState("");
   const [refunds, setRefunds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,133 +15,193 @@ const RefundRequest = ({ currentUser }) => {
   const [isAccepted, setIsAccepted] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
+  const auth = getAuth();
 
-  useEffect(() => {
-    // ใช้ user_id จาก currentUser หรือเป็นค่า default สำหรับการทดสอบ
-    const currentUserId = currentUser?.user_id || "COS0501";
+  const fetchRefundData = async (user) => {
+    setLoading(true);
+    setRefunds([]);
+    
+    try {
+      if (!user) {
+        console.log('No user provided');
+        setError('No user logged in');
+        setLoading(false);
+        return;
+      }
 
-    const unsubscribe = onSnapshot(collection(db, "Refund"), async (snapshot) => {
-      try {
-        const refundData = await Promise.all(snapshot.docs.map(async (refundDoc) => {
-          const refund = { id: refundDoc.id, ...refundDoc.data() };
+      console.log('Fetching refund data for user:', user.uid);
+      
+      // ดึงข้อมูล user_id จาก Firestore
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (!userDoc.exists()) {
+        console.log('User document not found');
+        setError('User not found');
+        setLoading(false);
+        return;
+      }
 
-          // 1. เช็คข้อมูล Booking ที่ตรงกัน
-          const bookingQuery = query(collection(db, "Booking"), where("booking_id", "==", refund.booking_id));
-          const bookingSnapshot = await getDocs(bookingQuery);
+      const userData = userDoc.data();
+      const userIdForQuery = userData.user_id;
+      console.log('Using user_id for query:', userIdForQuery);
 
-          if (bookingSnapshot.empty) {
-            console.log(`No matching booking found for booking_id: ${refund.booking_id}`);
-            return null; // ไม่พบข้อมูล Booking ที่ตรงกัน
-          }
+      // 1. ดึงข้อมูล Courts ทั้งหมดที่เป็นของ user นี้
+      const courtsRef = collection(db, 'Court');
+      const courtsQuery = query(courtsRef, where("user_id", "==", userIdForQuery));
+      const courtsSnapshot = await getDocs(courtsQuery);
+      
+      // เก็บสนามที่เป็นของ user ปัจจุบัน
+      const userCourtIds = [];
+      const courtsMap = {};
+      
+      courtsSnapshot.forEach(doc => {
+        const court = doc.data();
+        courtsMap[court.court_id] = court;
+        userCourtIds.push(court.court_id);
+      });
+      
+      console.log('User owned courts:', userCourtIds.length, userCourtIds);
+      
+      if (userCourtIds.length === 0) {
+        console.log('User does not own any courts');
+        setRefunds([]);
+        setLoading(false);
+        return;
+      }
 
-          const bookingData = bookingSnapshot.docs[0].data();
-          
-          // 2. เช็คข้อมูล Court ที่ตรงกัน
-          if (!bookingData.court_id) {
-            console.log(`Booking doesn't have court_id: ${refund.booking_id}`);
-            return null; // ไม่มี court_id ในข้อมูล Booking
-          }
-          
-          const courtQuery = query(collection(db, "Court"), where("court_id", "==", bookingData.court_id));
-          const courtSnapshot = await getDocs(courtQuery);
+      // 2. ติดตามการเปลี่ยนแปลงของ Refund collection
+      const unsubscribe = onSnapshot(collection(db, "Refund"), async (snapshot) => {
+        try {
+          const refundData = await Promise.all(snapshot.docs.map(async (refundDoc) => {
+            const refund = { id: refundDoc.id, ...refundDoc.data() };
 
-          if (courtSnapshot.empty) {
-            console.log(`No matching court found for court_id: ${bookingData.court_id}`);
-            return null; // ไม่พบข้อมูล Court ที่ตรงกัน
-          }
+            // 3. เช็คข้อมูล Booking ที่มี booking_id ตรงกับที่อยู่ใน Refund
+            const bookingQuery = query(collection(db, "Booking"), where("booking_id", "==", refund.booking_id));
+            const bookingSnapshot = await getDocs(bookingQuery);
 
-          // 3. เช็ค user_id ว่าตรงกับผู้ใช้ที่ login หรือไม่
-          if (bookingData.user_id !== currentUserId) {
-            console.log(`Booking user_id (${bookingData.user_id}) doesn't match current user (${currentUserId})`);
-            return null; // user_id ไม่ตรงกับผู้ใช้ที่ login
-          }
+            if (bookingSnapshot.empty) {
+              console.log(`No matching booking found for booking_id: ${refund.booking_id}`);
+              return null; // ไม่พบข้อมูล Booking ที่ตรงกัน
+            }
 
-          const courtData = courtSnapshot.docs[0].data();
-          
-          // ดึงข้อมูลและฟอร์แมตตามต้องการ
-          refund.Court = courtData.court_type || "N/A";
-          refund.Field = courtData.field || "N/A";
+            const bookingData = bookingSnapshot.docs[0].data();
+            
+            // 4. เช็คว่า Booking นั้นเกี่ยวข้องกับ Court ที่ user เป็นเจ้าของหรือไม่
+            if (!bookingData.court_id) {
+              console.log(`Booking doesn't have court_id: ${refund.booking_id}`);
+              return null; // ไม่มี court_id ในข้อมูล Booking
+            }
+            
+            if (!userCourtIds.includes(bookingData.court_id)) {
+              console.log(`Court ID ${bookingData.court_id} is not owned by this user`);
+              return null; // Court ไม่ได้เป็นของ user ที่ login
+            }
+            
+            const courtData = courtsMap[bookingData.court_id];
+            
+            // ดึงข้อมูลและฟอร์แมตตามต้องการ
+            refund.Court = courtData.court_type || "N/A";
+            refund.Field = courtData.field || "N/A";
 
-          // ฟอร์แมตวันที่และเวลา
-          if (bookingData.start_time && bookingData.end_time) {
-            const startDate = new Date(bookingData.start_time.seconds * 1000);
-            const endDate = new Date(bookingData.end_time.seconds * 1000);
+            // ฟอร์แมตวันที่และเวลา
+            if (bookingData.start_time && bookingData.end_time) {
+              const startDate = new Date(bookingData.start_time.seconds * 1000);
+              const endDate = new Date(bookingData.end_time.seconds * 1000);
 
-            // ฟอร์แมตวันที่
-            refund.Date = startDate.toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric'
-            });
-
-            // ฟอร์แมตเวลา
-            const formatTime = (date) => {
-              return date.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
+              // ฟอร์แมตวันที่
+              refund.Date = startDate.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
               });
-            };
 
-            refund.Time = `${formatTime(startDate)} - ${formatTime(endDate)}`;
+              // ฟอร์แมตเวลา
+              const formatTime = (date) => {
+                return date.toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false
+                });
+              };
 
-            // คำนวณจำนวนเงิน
-            if (courtData.bookingslot && courtData.priceslot) {
-              const startTime = startDate.getTime();
-              const endTime = endDate.getTime();
-              const durationInMinutes = (endTime - startTime) / (1000 * 60);
-              const slots = Math.ceil(durationInMinutes / courtData.bookingslot);
-              refund.amount = slots * courtData.priceslot;
+              refund.Time = `${formatTime(startDate)} - ${formatTime(endDate)}`;
+
+              // คำนวณจำนวนเงิน
+              if (courtData.bookingslot && courtData.priceslot) {
+                const startTime = startDate.getTime();
+                const endTime = endDate.getTime();
+                const durationInMinutes = (endTime - startTime) / (1000 * 60);
+                const slots = Math.ceil(durationInMinutes / courtData.bookingslot);
+                refund.amount = slots * courtData.priceslot;
+              } else {
+                refund.amount = 0;
+              }
             } else {
+              refund.Date = "N/A";
+              refund.Time = "N/A";
               refund.amount = 0;
             }
-          } else {
-            refund.Date = "N/A";
-            refund.Time = "N/A";
-            refund.amount = 0;
-          }
 
-          // ดึงข้อมูลผู้ใช้
-          const usersQuery = query(collection(db, "users"), where("user_id", "==", refund.user_id));
-          const usersSnapshot = await getDocs(usersQuery);
-          let userName = "N/A";
-          let userProfileImage = "";
+            // ดึงข้อมูลผู้ใช้ (user_id จาก Refund)
+            const usersQuery = query(collection(db, "users"), where("user_id", "==", refund.user_id));
+            const usersSnapshot = await getDocs(usersQuery);
+            let userName = "N/A";
+            let userProfileImage = "";
 
-          if (!usersSnapshot.empty) {
-            const userData = usersSnapshot.docs[0].data();
-            userName = `${userData.name || ""} ${userData.surname || ""}`.trim();
-            userProfileImage = userData.profileImage || "";
-          }
+            if (!usersSnapshot.empty) {
+              const userData = usersSnapshot.docs[0].data();
+              userName = `${userData.name || ""} ${userData.surname || ""}`.trim();
+              userProfileImage = userData.profileImage || "";
+            }
 
-          refund.user = {
-            name: userName,
-            profileImage: userProfileImage,
-          };
+            refund.user = {
+              name: userName,
+              profileImage: userProfileImage,
+            };
 
-          return refund;
-        }));
+            return refund;
+          }));
 
-        // กรองข้อมูล null ออก (กรณีที่ไม่พบข้อมูลที่ตรงตามเงื่อนไข)
-        const filteredRefundData = refundData.filter(item => item !== null);
-        
-        setRefunds(filteredRefundData);
-        setLoading(false);
-      } catch (err) {
+          // กรองข้อมูล null ออก (กรณีที่ไม่พบข้อมูลที่ตรงตามเงื่อนไข)
+          const filteredRefundData = refundData.filter(item => item !== null);
+          
+          console.log(`Found ${filteredRefundData.length} refund requests for user's courts`);
+          setRefunds(filteredRefundData);
+          setLoading(false);
+        } catch (err) {
+          setError("Error loading data. Please try again later.");
+          console.error("Firebase Error:", err);
+          setLoading(false);
+        }
+      }, (err) => {
         setError("Error loading data. Please try again later.");
         console.error("Firebase Error:", err);
         setLoading(false);
-      }
-    }, (err) => {
-      setError("Error loading data. Please try again later.");
-      console.error("Firebase Error:", err);
+      });
+
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("Error in fetchRefundData:", error);
+      setError("Failed to load refund data");
       setLoading(false);
+    }
+  };
+
+  // ตรวจสอบการ login และเรียกใช้ fetchRefundData
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        fetchRefundData(user);
+      } else {
+        setError('No user logged in');
+        setLoading(false);
+      }
     });
 
     return () => unsubscribe();
-  }, [currentUser]);
+  }, [auth]);
 
-  // ส่วนที่เหลือของโค้ดเหมือนเดิม (formatCurrency, formatTimestamp, openModal, closeModal, handleAccept, handleReject, ฯลฯ)
-  
   // Format currency
   const formatCurrency = (amount) => {
     return `฿${amount ? amount.toFixed(2) : "0.00"}`;

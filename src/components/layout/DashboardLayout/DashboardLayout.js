@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, LogOut } from 'lucide-react';
-import { getAuth, signOut } from 'firebase/auth';
+import { getAuth, signOut, onAuthStateChanged } from 'firebase/auth';
 import { collection, onSnapshot, doc, getDoc, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import Swal from 'sweetalert2';
@@ -13,62 +13,83 @@ const DashboardLayout = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const [profileImage, setProfileImage] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
   const [userCourts, setUserCourts] = useState([]);
+  const [courtsMap, setCourtsMap] = useState({});
   
   const [hasNewRequest, setHasNewRequest] = useState(false); // แสดงจุดแดง
   const [showNotification, setShowNotification] = useState(false); // popup แจ้งเตือน
   const [hasViewedRequests, setHasViewedRequests] = useState(false); // ตรวจสอบว่ากด View Requests แล้วหรือยัง
   const notificationRef = useRef(null);
+  const auth = getAuth();
 
-  // ดึงข้อมูลโปรไฟล์ผู้ใช้
+  // ดึงข้อมูลโปรไฟล์ผู้ใช้และสนามของผู้ใช้
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchUserData = async (user) => {
       try {
-        const auth = getAuth();
-        const user = auth.currentUser;
-        
-        if (user) {
-          const userDocRef = doc(db, "users", user.uid);
-          const userDoc = await getDoc(userDocRef);
-          
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setCurrentUser(userData);
-            
-            // เปลี่ยนจาก profilePicture เป็น profileImage
-            if (userData.profileImage) {
-              setProfileImage(userData.profileImage);
-            }
-            
-            // ดึงข้อมูลสนามที่เป็นของผู้ใช้นี้
-            await fetchUserCourts(userData.user_id);
-          }
+        if (!user) {
+          console.log('No user provided');
+          return;
         }
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
-      }
-    };
-    
-    const fetchUserCourts = async (userId) => {
-      try {
-        // สมมติว่ามีฟิลด์ owner_id ใน collection Court ที่ระบุเจ้าของสนาม
-        const courtsQuery = query(collection(db, "Court"), where("user_id", "==", userId));
+
+        console.log('Fetching data for user:', user.uid);
+        
+        // ดึงข้อมูล user_id จาก Firestore
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (!userDoc.exists()) {
+          console.log('User document not found');
+          return;
+        }
+
+        const userData = userDoc.data();
+        
+        // เปลี่ยนจาก profilePicture เป็น profileImage
+        if (userData.profileImage) {
+          setProfileImage(userData.profileImage);
+        }
+        
+        const userIdForQuery = userData.user_id;
+        console.log('Using user_id for query:', userIdForQuery);
+
+        // ดึงข้อมูล Courts ทั้งหมดที่เป็นของ user นี้
+        const courtsRef = collection(db, 'Court');
+        const courtsQuery = query(courtsRef, where("user_id", "==", userIdForQuery));
         const courtsSnapshot = await getDocs(courtsQuery);
         
-        const courts = courtsSnapshot.docs.map(doc => doc.data().court_id);
-        console.log("User courts:", courts);
-        setUserCourts(courts);
+        // เก็บสนามที่เป็นของ user ปัจจุบัน
+        const userCourtIds = [];
+        const courtsMapData = {};
+        
+        courtsSnapshot.forEach(doc => {
+          const court = doc.data();
+          courtsMapData[court.court_id] = court;
+          userCourtIds.push(court.court_id);
+        });
+        
+        console.log('User owned courts:', userCourtIds.length, userCourtIds);
+        setUserCourts(userCourtIds);
+        setCourtsMap(courtsMapData);
       } catch (error) {
-        console.error("Error fetching user courts:", error);
+        console.error("Error fetching user data:", error);
       }
     };
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        fetchUserData(user);
+      } else {
+        navigate('/login');
+      }
+    });
     
-    fetchUserProfile();
-  }, []);
+    return () => unsubscribe();
+  }, [auth, navigate]);
 
   // ติดตามคำขอคืนเงินที่เกี่ยวข้องกับสนามของผู้ใช้
   useEffect(() => {
+    if (userCourts.length === 0) return;
+    
     console.log("Setting up refund notification listener");
     
     const unsubscribe = onSnapshot(collection(db, "Refund"), async (snapshot) => {
@@ -85,7 +106,7 @@ const DashboardLayout = () => {
         const relevantRequests = await Promise.all(needActionDocs.map(async (refundDoc) => {
           const refundData = refundDoc.data();
           
-          // 1. เช็คข้อมูล Booking ที่ตรงกัน
+          // 1. เช็คข้อมูล Booking ที่มี booking_id ตรงกับที่อยู่ใน Refund
           const bookingQuery = query(collection(db, "Booking"), where("booking_id", "==", refundData.booking_id));
           const bookingSnapshot = await getDocs(bookingQuery);
           
@@ -97,8 +118,13 @@ const DashboardLayout = () => {
           const bookingData = bookingSnapshot.docs[0].data();
           
           // 2. เช็คว่า court_id ตรงกับสนามของผู้ใช้หรือไม่
-          if (!bookingData.court_id || !userCourts.includes(bookingData.court_id)) {
-            console.log(`Court (${bookingData.court_id}) is not owned by the user or not found`);
+          if (!bookingData.court_id) {
+            console.log(`Booking doesn't have court_id: ${refundData.booking_id}`);
+            return false;
+          }
+          
+          if (!userCourts.includes(bookingData.court_id)) {
+            console.log(`Court ID ${bookingData.court_id} is not owned by this user`);
             return false;
           }
           
@@ -126,8 +152,6 @@ const DashboardLayout = () => {
       } catch (error) {
         console.error("Error checking refund requests:", error);
       }
-    }, (error) => {
-      console.error("Error in Refund listener:", error);
     });
     
     return () => {
@@ -172,6 +196,17 @@ const DashboardLayout = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showNotification]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleLogout = async () => {
     try {
       const result = await Swal.fire({
@@ -192,7 +227,6 @@ const DashboardLayout = () => {
           didOpen: () => Swal.showLoading()
         });
 
-        const auth = getAuth();
         await signOut(auth);
 
         localStorage.removeItem('isLoggedIn');
