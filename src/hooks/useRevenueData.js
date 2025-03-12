@@ -151,7 +151,7 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
           return;
         }
         
-        // 2. ดึงข้อมูลการจองทั้งหมด
+        // 2. ดึงข้อมูลการจองทั้งหมด (ทุกช่วงเวลา)
         const bookingsRef = collection(db, 'Booking');
         const bookingsQuery = query(
           bookingsRef,
@@ -174,6 +174,9 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
         // 3. กรองข้อมูลการจองที่เป็นของสนามที่ user เป็นเจ้าของ
         const allBookings = [];
         
+        // ใช้ Set เพื่อเก็บ user_id ทั้งหมดที่เคยมีการจองในทุกช่วงเวลา
+        const allHistoricalUserIds = new Set();
+        
         for (const docSnapshot of bookingSnapshots.docs) {
           const booking = docSnapshot.data();
           
@@ -187,11 +190,17 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
             
             if (fieldMatch && courtTypeMatch) {
               allBookings.push(booking);
+              
+              // เก็บ user_id ทั้งหมดที่เคยมีการจองสนามนี้ไว้ในประวัติ
+              if (booking.user_id) {
+                allHistoricalUserIds.add(booking.user_id);
+              }
             }
           }
         }
         
         console.log('After filtering, found', allBookings.length, 'bookings for user\'s courts');
+        console.log('Total unique customers in history:', allHistoricalUserIds.size);
         
         // กรองข้อมูลตาม filterPeriod
         const filteredData = filterDataByPeriod(allBookings, filterPeriod, selectedMonth, selectedYear);
@@ -207,9 +216,12 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
         let currentBookingHours = 0;
         let previousBookingHours = 0;
         
-        // เก็บ user_id ที่พบในแต่ละช่วงเวลา (สำหรับนับลูกค้าใหม่)
+        // เก็บ user_id ที่มีการจองในช่วงปัจจุบัน
         let currentUsers = new Set();
+        // เก็บ user_id ที่มีการจองในช่วงก่อนหน้า
         let previousUsers = new Set();
+        // เก็บ user_id ที่มีการจองก่อนช่วงปัจจุบัน (ประวัติทั้งหมดก่อนช่วงปัจจุบัน)
+        let historicalUsers = new Set();
 
         // ประมวลผลข้อมูลการจองปัจจุบัน
         for (const booking of filteredData.current) {
@@ -285,10 +297,25 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
           }
         }
 
-        // หาผู้ใช้ใหม่ (มีใน currentUsers แต่ไม่มีใน previousUsers)
+        // เก็บข้อมูลผู้ใช้ในประวัติทั้งหมดที่เคยจองก่อนช่วงปัจจุบัน
+        for (const booking of allBookings) {
+          // ตรวจสอบว่าการจองนี้เกิดขึ้นก่อนช่วงเวลาปัจจุบันหรือไม่
+          const bookingDate = new Date(booking.start_time.seconds * 1000);
+          if (bookingDate < filteredData.current.start && booking.user_id) {
+            historicalUsers.add(booking.user_id);
+          }
+        }
+
+        // หาผู้ใช้ใหม่แบบเบ็ดเสร็จ (ไม่เคยมีการจองเลยตั้งแต่เริ่มระบบ)
+        // คือผู้ใช้ที่อยู่ในช่วงปัจจุบันแต่ไม่เคยอยู่ในประวัติการจองก่อนหน้านี้
         const newUsersCount = Array.from(currentUsers).filter(
-          userId => !Array.from(previousUsers).includes(userId)
+          userId => !historicalUsers.has(userId)
         ).length;
+
+        console.log('Users in current period:', currentUsers.size);
+        console.log('Users in previous period:', previousUsers.size);
+        console.log('Historical users before current period:', historicalUsers.size);
+        console.log('True new users (first time ever):', newUsersCount);
 
         // คำนวณเปอร์เซ็นต์การเปลี่ยนแปลง
         const calculateChange = (current, previous) => {
@@ -299,7 +326,28 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
         const revenueChange = calculateChange(currentRevenue, previousRevenue);
         const bookingsChange = calculateChange(currentBookingCount, previousBookingCount);
         const hoursChange = calculateChange(currentBookingHours, previousBookingHours);
-        const newUsersChange = calculateChange(newUsersCount, previousUsers.size);
+        
+        // เปรียบเทียบจำนวนลูกค้าใหม่ในช่วงปัจจุบันกับช่วงก่อนหน้า
+        // หาจำนวนลูกค้าใหม่ในช่วงก่อนหน้า (เพื่อคำนวณ % การเปลี่ยนแปลง)
+        const previousNewUsersCount = Array.from(previousUsers).filter(
+          userId => {
+            // ลูกค้าคนนี้ไม่อยู่ในประวัติก่อนช่วงก่อนหน้า 
+            // (ต้องตัดช่วงก่อนหน้าออกจาก historicalUsers ก่อน)
+            const historicalBeforePrevious = new Set();
+            for (const booking of allBookings) {
+              const bookingDate = new Date(booking.start_time.seconds * 1000);
+              if (bookingDate < filteredData.previous.start && booking.user_id) {
+                historicalBeforePrevious.add(booking.user_id);
+              }
+            }
+            return !historicalBeforePrevious.has(userId);
+          }
+        ).length;
+        
+        const newUsersChange = calculateChange(newUsersCount, previousNewUsersCount);
+        
+        console.log('New users in previous period:', previousNewUsersCount);
+        console.log('New users change:', newUsersChange, '%');
 
         // อัพเดท metrics
         setMetrics([
@@ -332,8 +380,8 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
         console.log('Current Bookings:', currentBookingCount);
         console.log('Previous Bookings:', previousBookingCount);
         console.log('Bookings Change:', bookingsChange, '%');
-        console.log('New Users Count:', newUsersCount);
-        console.log('Previous Period Users:', previousUsers.size);
+        console.log('New Users Count (first time ever):', newUsersCount);
+        console.log('Previous New Users Count:', previousNewUsersCount);
         console.log('New Users Change:', newUsersChange, '%');
 
       } catch (err) {

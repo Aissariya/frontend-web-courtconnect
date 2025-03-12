@@ -16,7 +16,7 @@ const Transactions = () => {
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
+  const [itemsPerPage] = useState(10); // เพิ่มจำนวนรายการต่อหน้าเป็น 10
   const [totalItems, setTotalItems] = useState(0);
   
   // Firebase instances
@@ -93,10 +93,13 @@ const Transactions = () => {
               ? parseFloat(docData.amount) 
               : (typeof docData.amount === 'number' ? docData.amount : 0);
             
+            // กำหนด source ตาม status
+            const source = docData.status === 'tranfer_in' ? 'Booking Request' : 'Refund Request';
+            
             // สร้างข้อมูลธุรกรรมสำหรับแสดงผล
             const transactionData = {
               id: docSnap.id,
-              name: 'System Transaction',
+              source: source,
               date: docData.create_at ? new Date(docData.create_at.toDate()).toLocaleString() : '-',
               amount: amountValue,
               status: docData.status || '-',
@@ -141,9 +144,15 @@ const Transactions = () => {
         console.log('Final transactions data with running balance:', walletTransactions);
         console.log('Final balance:', runningBalance);
         
-        setTransactions(walletTransactions);
-        setTotalBalance(runningBalance);
         setTotalItems(walletTransactions.length);
+        setTotalBalance(runningBalance);
+        
+        // คำนวณข้อมูลที่จะแสดงในหน้าปัจจุบัน
+        const indexOfLastItem = currentPage * itemsPerPage;
+        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+        const currentItems = walletTransactions.slice(indexOfFirstItem, indexOfLastItem);
+        
+        setTransactions(currentItems);
         
       } catch (err) {
         console.error('Error fetching transactions:', err);
@@ -183,14 +192,14 @@ const Transactions = () => {
         <div className="profile-icon-small">
           <CreditCard size={24} color="#6b7280" />
         </div>
-        <span>Transacations</span>
+        <span>Transactions</span>
       </div>
 
       <div className="transactions-grid">
         {/* Total Balance Card */}
         <div className="transactions-card balance-card">
           <div className="total-balance-label">Total Balance</div>
-          <div className="total-balance-amount">₿{totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div className="total-balance-amount">฿{totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
 
         {/* Transactions List */}
@@ -198,7 +207,7 @@ const Transactions = () => {
           <table className="transactions-table">
             <thead>
               <tr>
-                <th>Name</th>
+                <th>Source</th>
                 <th>Datetime</th>
                 <th>Amount</th>
               </tr>
@@ -209,14 +218,13 @@ const Transactions = () => {
                   <tr key={transaction.id}>
                     <td>
                       <div className="transaction-user">
-                        <div className="user-avatar"></div>
-                        <span>{transaction.name}</span>
+                        <span>{transaction.source}</span>
                       </div>
                     </td>
                     <td>{transaction.date}</td>
                     <td className={transaction.status === 'tranfer_in' ? 'amount-positive' : 'amount-negative'}>
-                      {transaction.status === 'tranfer_in' ? '+' : '-'}₿{transaction.amount.toFixed(2)}
-                      <div className="balance-info">Balance: ₿{transaction.runningBalance.toFixed(2)}</div>
+                      {transaction.status === 'tranfer_in' ? '+' : '-'}฿{transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <div className="balance-info">Balance: ฿{transaction.runningBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     </td>
                   </tr>
                 ))
@@ -229,10 +237,10 @@ const Transactions = () => {
           </table>
           
           {/* Pagination */}
-          {transactions.length > 0 && (
+          {totalItems > 0 && (
             <div className="pagination">
               <div className="pagination-info">
-                Showing {transactions.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} from {totalItems} data
+                Showing {transactions.length > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0} to {Math.min(currentPage * itemsPerPage, totalItems)} from {totalItems} data
               </div>
               <div className="pagination-controls">
                 <button 
