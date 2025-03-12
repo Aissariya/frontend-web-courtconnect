@@ -93,10 +93,13 @@ const Transactions = () => {
               ? parseFloat(docData.amount) 
               : (typeof docData.amount === 'number' ? docData.amount : 0);
             
+            // กำหนด source ตาม status
+            const source = docData.status === 'tranfer_in' ? 'Booking Request' : 'Refund Request';
+            
             // สร้างข้อมูลธุรกรรมสำหรับแสดงผล
             const transactionData = {
               id: docSnap.id,
-              name: 'System Transaction',
+              source: source,
               date: docData.create_at ? new Date(docData.create_at.toDate()).toLocaleString() : '-',
               amount: amountValue,
               status: docData.status || '-',
@@ -204,7 +207,7 @@ const Transactions = () => {
           <table className="transactions-table">
             <thead>
               <tr>
-                <th>Name</th>
+                <th>Source</th>
                 <th>Datetime</th>
                 <th>Amount</th>
               </tr>
@@ -215,8 +218,7 @@ const Transactions = () => {
                   <tr key={transaction.id}>
                     <td>
                       <div className="transaction-user">
-                        <div className="user-avatar"></div>
-                        <span>{transaction.name}</span>
+                        <span>{transaction.source}</span>
                       </div>
                     </td>
                     <td>{transaction.date}</td>
