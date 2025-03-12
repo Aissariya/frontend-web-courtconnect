@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react"
 import Swal from "sweetalert2"
-import { getFirestore, collection, getDocs, query, where } from "firebase/firestore"
+import { getFirestore, collection, getDocs, query, where, doc, getDoc } from "firebase/firestore"
+import { getAuth, onAuthStateChanged } from "firebase/auth"
 import "./FieldManagementPage.css"
 import AddCourtForm from "./AddCourtForm"
 import CourtDetailsModal from "./CourtDetailsModal"
@@ -19,88 +20,106 @@ function CourtManagement() {
   const [timeslots, setTimeslots] = useState({})
   const [loading, setLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState(null)
+  const [authError, setAuthError] = useState(null)
   const statusDropdownRef = useRef(null)
 
   useEffect(() => {
-    const fetchUserAndCourts = async () => {
-      setLoading(true)
-      try {
-        const db = getFirestore(firebaseApp)
+    const auth = getAuth(firebaseApp)
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          // User is signed in, get their user document from Firestore
+          const db = getFirestore(firebaseApp)
+          const userDocRef = doc(collection(db, "users"), firebaseUser.uid)
+          const userDocSnap = await getDoc(userDocRef)
 
-        // First, fetch the current user's document
-        const usersCollection = collection(db, "users")
-        const usersSnapshot = await getDocs(usersCollection)
-        const userDoc = usersSnapshot.docs.find((doc) => {
-          const userData = doc.data()
-          // You might want to replace this with actual authentication
-          return userData.email === "napat.meu@ku.th" // For testing purposes
-        })
+          if (userDocSnap.exists()) {
+            const userData = userDocSnap.data()
+            setCurrentUser(userData)
 
-        if (!userDoc) {
-          console.error("User not found")
+            // Now fetch courts and timeslots
+            await fetchCourtsAndTimeslots(db, userData.user_id)
+          } else {
+            // User document doesn't exist in Firestore
+            console.error("User document not found in Firestore")
+            setAuthError("User profile not found. Please contact support.")
+            setLoading(false)
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error)
+          setAuthError("Error loading user data. Please try again.")
           setLoading(false)
-          return
         }
-
-        const userData = userDoc.data()
-        setCurrentUser(userData)
-        console.log("Current user:", userData)
-
-        // Fetch timeslots
-        const timeslotsCollection = collection(db, "Timeslot")
-        const timeslotsSnapshot = await getDocs(timeslotsCollection)
-
-        const timeslotsData = {}
-        timeslotsSnapshot.docs.forEach((doc) => {
-          const data = doc.data()
-          if (data.court_id && data.available === "yes") {
-            if (!timeslotsData[data.court_id]) {
-              timeslotsData[data.court_id] = []
-            }
-            timeslotsData[data.court_id].push({
-              id: doc.id,
-              ...data,
-            })
-          }
-        })
-        setTimeslots(timeslotsData)
-
-        // Fetch courts for the current user
-        const courtsCollection = collection(db, "Court")
-        const courtsQuery = query(courtsCollection, where("user_id", "==", userData.user_id))
-        const courtsSnapshot = await getDocs(courtsQuery)
-
-        const courtsList = courtsSnapshot.docs.map((doc) => {
-          const data = doc.data()
-          const courtTimeslots = timeslotsData[data.court_id] || []
-
-          return {
-            id: doc.id,
-            name: data.field || "Unnamed Court",
-            type: data.court_type || "Unknown",
-            capacity: data.capacity || 0,
-            bookingSlots: data.bookingslot || 0,
-            status: data.status || "Available",
-            address: data.address,
-            court_id: data.court_id,
-            priceslot: data.priceslot,
-            user_id: data.user_id,
-            timeslots: courtTimeslots,
-          }
-        })
-
-        setCourts(courtsList)
-        console.log("Fetched courts for user:", courtsList)
-      } catch (error) {
-        console.error("Error fetching data:", error)
-        console.error("Error details:", error.code, error.message)
-      } finally {
+      } else {
+        // User is signed out
+        setCurrentUser(null)
+        setCourts([])
         setLoading(false)
+        setAuthError("Please sign in to view your courts")
       }
-    }
+    })
 
-    fetchUserAndCourts()
+    // Cleanup subscription on unmount
+    return () => unsubscribe()
   }, [])
+
+  const fetchCourtsAndTimeslots = async (db, userId) => {
+    try {
+      // Fetch timeslots
+      const timeslotsCollection = collection(db, "Timeslot")
+      const timeslotsSnapshot = await getDocs(timeslotsCollection)
+
+      const timeslotsData = {}
+      timeslotsSnapshot.docs.forEach((doc) => {
+        const data = doc.data()
+        if (data.court_id) {
+          if (!timeslotsData[data.court_id]) {
+            timeslotsData[data.court_id] = []
+          }
+          timeslotsData[data.court_id].push({
+            id: doc.id,
+            ...data,
+          })
+        }
+      })
+      setTimeslots(timeslotsData)
+
+      // Fetch courts for the current user
+      const courtsCollection = collection(db, "Court")
+      const courtsQuery = query(courtsCollection, where("user_id", "==", userId))
+      const courtsSnapshot = await getDocs(courtsQuery)
+
+      const courtsList = courtsSnapshot.docs.map((doc) => {
+        const data = doc.data()
+        const courtTimeslots = timeslotsData[data.court_id] || []
+
+        // Determine court status based on timeslots' available field (boolean)
+        const isAvailable = courtTimeslots.some((slot) => slot.available === true)
+
+        return {
+          id: doc.id,
+          name: data.field,
+          type: data.court_type,
+          capacity: data.capacity,
+          bookingSlots: data.bookingslot,
+          status: isAvailable ? "Available" : "Unavailable",
+          address: data.address,
+          court_id: data.court_id,
+          priceslot: data.priceslot,
+          user_id: data.user_id,
+          timeslots: courtTimeslots.filter((slot) => slot.available === true), // Only include available timeslots
+        }
+      })
+
+      setCourts(courtsList)
+      console.log("Fetched courts for user:", courtsList)
+    } catch (error) {
+      console.error("Error fetching data:", error)
+      setAuthError("Error loading court data. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleViewDetails = (court) => {
     setSelectedCourt(court)
@@ -112,7 +131,7 @@ function CourtManagement() {
 
   const handleSaveStatus = (courtId, newStatus) => {
     const updatedCourts = courts.map((court) => (court.id === courtId ? { ...court, status: newStatus } : court))
-    setCourts(updatedCourts) // Update the local state
+    setCourts(updatedCourts)
     console.log("Updated courts:", updatedCourts)
 
     Swal.fire({
@@ -184,9 +203,11 @@ function CourtManagement() {
           </span>
         </div>
 
-        <div className="dashboard-button" onClick={handleAddCourt}>
-          <span>Add Court</span>
-        </div>
+        {currentUser && (
+          <div className="dashboard-button" onClick={handleAddCourt}>
+            <span>Add Court</span>
+          </div>
+        )}
 
         <div className="main-containerkr">
           <div className="header-section">
@@ -218,21 +239,23 @@ function CourtManagement() {
               <span className="topic-text">{currentUser ? `${currentUser.name}'s Courts` : "My Courts"}</span>
             </div>
 
-            <div className="selection-dropdown" ref={statusDropdownRef}>
-              <button onClick={toggleStatusDropdown} className="status-button">
-                <span>Status</span>
-                <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M5.25 8.75L10.5 14L15.75 8.75" stroke="rgba(54, 54, 54, 0.5)" strokeWidth="2" />
-                </svg>
-              </button>
-              {isStatusDropdownOpen && (
-                <div className="status-dropdown">
-                  <button onClick={() => handleStatusFilter("Available")}>Available</button>
-                  <button onClick={() => handleStatusFilter("Unavailable")}>Unavailable</button>
-                  {statusFilter && <button onClick={() => handleStatusFilter(null)}>Clear Filter</button>}
-                </div>
-              )}
-            </div>
+            {currentUser && (
+              <div className="selection-dropdown" ref={statusDropdownRef}>
+                <button onClick={toggleStatusDropdown} className="status-button">
+                  <span>Status</span>
+                  <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5.25 8.75L10.5 14L15.75 8.75" stroke="rgba(54, 54, 54, 0.5)" strokeWidth="2" />
+                  </svg>
+                </button>
+                {isStatusDropdownOpen && (
+                  <div className="status-dropdown">
+                    <button onClick={() => handleStatusFilter("Available")}>Available</button>
+                    <button onClick={() => handleStatusFilter("Unavailable")}>Unavailable</button>
+                    {statusFilter && <button onClick={() => handleStatusFilter(null)}>Clear Filter</button>}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="table-container">
@@ -251,7 +274,7 @@ function CourtManagement() {
                 <div className="sort-icon">
                   <svg width="10.51" height="15.76" viewBox="0 0 11 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M5.5 0L10 5H1L5.5 0Z" fill="rgba(54, 54, 54, 0.5)" />
-                    <path d="M5.5 16L1 11H10L5.5 16Z" fill="rgba(54, 54, 0.5)" />
+                    <path d="M5.5 16L1 11H10L5.5 16Z" fill="rgba(54, 54, 54, 0.5)" />
                   </svg>
                 </div>
               </div>
@@ -277,6 +300,10 @@ function CourtManagement() {
                 <div className="table-row" style={{ justifyContent: "center" }}>
                   <div>Loading courts data...</div>
                 </div>
+              ) : authError ? (
+                <div className="table-row" style={{ justifyContent: "center" }}>
+                  <div>{authError}</div>
+                </div>
               ) : courts.length > 0 ? (
                 filteredCourts.map((court) => (
                   <div className="table-row" key={court.id}>
@@ -285,20 +312,41 @@ function CourtManagement() {
                       <span className="court-name">{court.name}</span>
                     </div>
                     <div className="court-type">{court.type}</div>
-                    <div className="court-hours" style={{ whiteSpace: "pre-line" }}>
-                      {court.timeslots.length > 0
-                        ? court.timeslots.map((slot, index) => (
-                            <div key={slot.id} className="time-slot">
-                              {`${slot.time_start} - ${slot.time_end}`}
-                              <br />
-                              {index < court.timeslots.length - 1 && <hr className="my-1" />}
+                    <div className="court-hours">
+                      {court.status === "Available" && court.timeslots.length > 0 ? (
+                        <div className="space-y-1">
+                          {[
+                            ...new Set(
+                              court.timeslots.map((slot) => {
+                                // Format timestamps to extract only time
+                                const formatTime = (timestamp) => {
+                                  if (!timestamp) return ""
+                                  // If timestamp is a Firestore Timestamp object
+                                  if (timestamp.toDate) {
+                                    const date = timestamp.toDate()
+                                    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                                  }
+                                  // If timestamp is already a Date object or string
+                                  const date = new Date(timestamp)
+                                  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                                }
+
+                                return `${formatTime(slot.time_start)} - ${formatTime(slot.time_end)}`
+                              }),
+                            ),
+                          ].map((timeRange, index) => (
+                            <div key={index} className="time-slot">
+                              {timeRange}
                             </div>
-                          ))
-                        : "No available hours"}
+                          ))}
+                        </div>
+                      ) : (
+                        "No available hours"
+                      )}
                     </div>
                     <div className="court-capacity">{court.capacity}</div>
                     <div className="court-booking-slots">{court.bookingSlots}</div>
-                    <div className={`court-status ${court.status?.toLowerCase()}`}>{court.status || "N/A"}</div>
+                    <div className={`court-status ${court.status?.toLowerCase()}`}>{court.status}</div>
                     <div className="court-action">
                       <button className="action-button" onClick={() => handleViewDetails(court)}>
                         Details

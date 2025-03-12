@@ -1,195 +1,273 @@
 .court-details-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  
-  .court-details-modal {
-    background: white;
-    border-radius: 15px;
-    width: 100%;
-    max-width: 380px; /* Further reduced width */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-  }
-  
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 15px; /* Reduced padding */
-    border-bottom: 1px solid #F0F0F0;
-  }
-  
-  .modal-title {
-    font-weight: 600;
-    font-size: 16px;
-    color: #363636;
-    margin: 0;
-  }
-  
-  .close-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 5px;
-  }
-  
-  .modal-content {
-    padding: 12px 15px; /* Reduced padding */
-    max-height: 350px; /* Limit the height */
-    overflow-y: auto; /* Add scroll if content is too long */
-  }
-  
-  .detail-section {
-    margin-bottom: 12px; /* Reduced margin */
-  }
-  
-  .detail-section:last-child {
-    margin-bottom: 0;
-  }
-  
-  .status-section {
-    margin-bottom: 0; /* No margin for the last section */
-  }
-  
-  .detail-row {
-    display: flex;
-    margin-bottom: 12px; /* Reduced margin */
-  }
-  
-  .detail-column {
-    flex: 1;
-  }
-  
-  .detail-label {
-    font-size: 12px; /* Further reduced font size */
-    color: rgba(54, 54, 54, 0.5);
-    margin-bottom: 4px; /* Reduced margin */
-  }
-  
-  .detail-value {
-    font-size: 14px; /* Further reduced font size */
-    font-weight: 500;
-    color: #363636;
-  }
-  
-  .days-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px; /* Reduced gap */
-  }
-  
-  .day-button {
-    box-sizing: border-box;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 4px 7px; /* Reduced padding */
-    border: 1px solid #D9D9D9;
-    border-radius: 6px; /* Reduced border radius */
-    font-size: 12px; /* Further reduced font size */
-    background: #FFFFFF;
-  }
-  
-  .day-button.active {
-    background: #363636;
-    border-color: #363636;
-  }
-  
-  .day-button.active .day-text {
-    color: #FFFFFF;
-  }
-  
-  .day-text {
-    font-weight: 400;
-    font-size: 12px; /* Further reduced font size */
-    color: #363636;
-  }
-  
-  .status-dropdown-container {
-    position: relative;
-  }
-  
-  .status-dropdown-button {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 10px; /* Reduced padding */
-    background: #F9F9F9;
-    border-radius: 6px; /* Reduced border radius */
-    cursor: pointer;
-  }
-  
-  .status-text {
-    font-size: 14px; /* Further reduced font size */
-    font-weight: 500;
-  }
-  
-  .status-text.available {
-    color: #3D8639;
-  }
-  
-  .status-text.unavailable {
-    color: #C84D48;
-  }
-  
-  .status-dropdown-menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: white;
-    border: 1px solid #D9D9D9;
-    border-radius: 6px; /* Reduced border radius */
-    margin-top: 4px; /* Reduced margin */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    z-index: 10;
-  }
-  
-  .status-option {
-    padding: 6px 10px; /* Reduced padding */
-    cursor: pointer;
-    font-size: 14px; /* Further reduced font size */
-    color: #363636;
-  }
-  
-  .status-option:hover {
-    background: #F9F9F9;
-  }
-  
-  .modal-footer {
-    display: flex;
-    padding: 12px 15px; /* Reduced padding */
-    justify-content: space-between; /* Space between buttons */
-    border-top: 1px solid #F0F0F0;
-  }
-  
-  .edit-button {
-    padding: 8px 12px; /* Reduced padding */
-    background: #FFFFFF;
-    border: 1px solid #D9D9D9;
-    border-radius: 6px; /* Reduced border radius */
-    font-weight: 500;
-    font-size: 14px; /* Further reduced font size */
-    color: #363636;
-    cursor: pointer;
-  }
-  
-  .save-button {
-    padding: 8px 12px; /* Reduced padding */
-    background: #A2F193;
-    border: none;
-    border-radius: 6px; /* Reduced border radius */
-    font-weight: 600;
-    font-size: 14px; /* Further reduced font size */
-    color: #137400;
-    cursor: pointer;
-  }
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.court-details-modal {
+  background: white;
+  border-radius: 15px;
+  width: 100%;
+  max-width: 380px; /* Further reduced width */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px; /* Reduced padding */
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: #363636;
+  margin: 0;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.modal-content {
+  padding: 12px 15px; /* Reduced padding */
+  max-height: 350px; /* Limit the height */
+  overflow-y: auto; /* Add scroll if content is too long */
+}
+
+.detail-section {
+  margin-bottom: 12px; /* Reduced margin */
+}
+
+.detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.detail-row {
+  display: flex;
+  margin-bottom: 12px; /* Reduced margin */
+}
+
+.detail-column {
+  flex: 1;
+}
+
+.detail-label {
+  font-size: 12px; /* Further reduced font size */
+  color: rgba(54, 54, 54, 0.5);
+  margin-bottom: 4px; /* Reduced margin */
+}
+
+.detail-value {
+  font-size: 14px; /* Further reduced font size */
+  font-weight: 500;
+  color: #363636;
+}
+
+.days-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px; /* Reduced gap */
+}
+
+.day-button {
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 7px; /* Reduced padding */
+  border: 1px solid #d9d9d9;
+  border-radius: 6px; /* Reduced border radius */
+  font-size: 12px; /* Further reduced font size */
+  background: #ffffff;
+}
+
+.day-button.active {
+  background: #363636;
+  border-color: #363636;
+}
+
+.day-button.active .day-text {
+  color: #ffffff;
+}
+
+.day-text {
+  font-weight: 400;
+  font-size: 12px; /* Further reduced font size */
+  color: #363636;
+}
+
+.status-section {
+  margin-bottom: 0; /* No margin for the last section */
+}
+
+.status-dropdown-container {
+  position: relative;
+}
+
+.status-dropdown-button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px; /* Reduced padding */
+  background: #f9f9f9;
+  border-radius: 6px; /* Reduced border radius */
+  cursor: pointer;
+}
+
+.status-text {
+  font-size: 14px; /* Further reduced font size */
+  font-weight: 500;
+}
+
+.status-text.available {
+  color: #3d8639;
+}
+
+.status-text.unavailable {
+  color: #c84d48;
+}
+
+.status-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px; /* Reduced border radius */
+  margin-top: 4px; /* Reduced margin */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.status-option {
+  padding: 6px 10px; /* Reduced padding */
+  cursor: pointer;
+  font-size: 14px; /* Further reduced font size */
+  color: #363636;
+}
+
+.status-option:hover {
+  background: #f9f9f9;
+}
+
+.modal-footer {
+  display: flex;
+  padding: 12px 15px; /* Reduced padding */
+  justify-content: space-between; /* Space between buttons */
+  border-top: 1px solid #f0f0f0;
+}
+
+.edit-button,
+.cancel-button {
+  padding: 8px 12px; /* Reduced padding */
+  background: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px; /* Reduced border radius */
+  font-weight: 500;
+  font-size: 14px; /* Further reduced font size */
+  color: #363636;
+  cursor: pointer;
+}
+
+.save-button {
+  padding: 8px 12px; /* Reduced padding */
+  background: #a2f193;
+  border: none;
+  border-radius: 6px; /* Reduced border radius */
+  font-weight: 600;
+  font-size: 14px; /* Further reduced font size */
+  color: #137400;
+  cursor: pointer;
+}
+
+/* New styles for edit mode */
+.edit-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #363636;
+}
+
+.time-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.time-input {
+  width: 120px;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.day-button.editable {
+  transition: all 0.2s ease;
+}
+
+.day-button.editable:hover {
+  border-color: #363636;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.custom-time-picker {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px 12px;
+  background-color: white;
+}
+
+.hour-select,
+.minute-select {
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  padding: 0;
+  margin: 0;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  text-align: center;
+  width: 30px;
+}
+
+.custom-time-picker span {
+  margin: 0 2px;
+  font-weight: bold;
+}
+
+.time-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.time-range-inputs span {
+  margin: 0 5px;
+}
