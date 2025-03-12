@@ -16,7 +16,7 @@ const Transactions = () => {
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
+  const [itemsPerPage] = useState(10); // เพิ่มจำนวนรายการต่อหน้าเป็น 10
   const [totalItems, setTotalItems] = useState(0);
   
   // Firebase instances
@@ -141,9 +141,15 @@ const Transactions = () => {
         console.log('Final transactions data with running balance:', walletTransactions);
         console.log('Final balance:', runningBalance);
         
-        setTransactions(walletTransactions);
-        setTotalBalance(runningBalance);
         setTotalItems(walletTransactions.length);
+        setTotalBalance(runningBalance);
+        
+        // คำนวณข้อมูลที่จะแสดงในหน้าปัจจุบัน
+        const indexOfLastItem = currentPage * itemsPerPage;
+        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+        const currentItems = walletTransactions.slice(indexOfFirstItem, indexOfLastItem);
+        
+        setTransactions(currentItems);
         
       } catch (err) {
         console.error('Error fetching transactions:', err);
@@ -183,14 +189,14 @@ const Transactions = () => {
         <div className="profile-icon-small">
           <CreditCard size={24} color="#6b7280" />
         </div>
-        <span>Transacations</span>
+        <span>Transactions</span>
       </div>
 
       <div className="transactions-grid">
         {/* Total Balance Card */}
         <div className="transactions-card balance-card">
           <div className="total-balance-label">Total Balance</div>
-          <div className="total-balance-amount">₿{totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div className="total-balance-amount">฿{totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
 
         {/* Transactions List */}
@@ -215,8 +221,8 @@ const Transactions = () => {
                     </td>
                     <td>{transaction.date}</td>
                     <td className={transaction.status === 'tranfer_in' ? 'amount-positive' : 'amount-negative'}>
-                      {transaction.status === 'tranfer_in' ? '+' : '-'}₿{transaction.amount.toFixed(2)}
-                      <div className="balance-info">Balance: ₿{transaction.runningBalance.toFixed(2)}</div>
+                      {transaction.status === 'tranfer_in' ? '+' : '-'}฿{transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <div className="balance-info">Balance: ฿{transaction.runningBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     </td>
                   </tr>
                 ))
@@ -229,10 +235,10 @@ const Transactions = () => {
           </table>
           
           {/* Pagination */}
-          {transactions.length > 0 && (
+          {totalItems > 0 && (
             <div className="pagination">
               <div className="pagination-info">
-                Showing {transactions.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} from {totalItems} data
+                Showing {transactions.length > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0} to {Math.min(currentPage * itemsPerPage, totalItems)} from {totalItems} data
               </div>
               <div className="pagination-controls">
                 <button 
