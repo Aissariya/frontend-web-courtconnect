@@ -107,6 +107,10 @@ function CourtManagement() {
           court_id: data.court_id,
           priceslot: data.priceslot,
           user_id: data.user_id,
+          // Extract images array from court document
+          images: data.images || [],
+          // Extract image link string from court document
+          imageUrl: data.imageUrl || "",
           timeslots: courtTimeslots.filter((slot) => slot.available === true), // Only include available timeslots
         }
       })
@@ -177,6 +181,39 @@ function CourtManagement() {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [])
+
+  // Function to get the court image URL
+  const getCourtImageUrl = (court) => {
+    try {
+      // First check if there's a direct imageUrl string
+      if (court.imageUrl && typeof court.imageUrl === "string") {
+        // Clean the URL and ensure it's valid
+        const url = new URL(court.imageUrl)
+        return url.toString()
+      }
+
+      // Then check if there's an images array with at least one item
+      if (court.images && Array.isArray(court.images) && court.images.length > 0) {
+        // Find the first valid image URL
+        for (const image of court.images) {
+          if (image && typeof image === "string") {
+            try {
+              const url = new URL(image)
+              return url.toString()
+            } catch (e) {
+              console.warn("Invalid image URL in array:", image)
+              continue
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Error processing image URL:", e)
+    }
+
+    // Return a placeholder if no valid image is found
+    return "/placeholder.svg?height=59&width=59"
+  }
 
   const filteredCourts = courts.filter((court) => {
     const matchesField = selectedFields.length === 0 || selectedFields.includes(court.name)
@@ -306,7 +343,7 @@ function CourtManagement() {
                 filteredCourts.map((court) => (
                   <div className="table-row" key={court.id}>
                     <div className="court-info">
-                      <div className="court-image"></div>
+                      {/* Removed the image completely */}
                       <span className="court-name">{court.name}</span>
                     </div>
                     <div className="court-type">{court.type}</div>
@@ -363,7 +400,6 @@ function CourtManagement() {
               )}
             </div>
           </div>
-
           <div className="paginationkr">
             <div className="pagination-textkr">Showing all {filteredCourts.length} entries</div>
           </div>
@@ -378,3 +414,4 @@ function CourtManagement() {
 }
 
 export default CourtManagement
+

@@ -15,7 +15,7 @@
   background: white;
   border-radius: 15px;
   width: 100%;
-  max-width: 380px; /* Further reduced width */
+  max-width: 500px; /* Increased from 380px */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
@@ -24,13 +24,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 15px; /* Reduced padding */
+  padding: 16px 20px; /* Increased from 12px 15px */
   border-bottom: 1px solid #f0f0f0;
 }
 
 .modal-title {
   font-weight: 600;
-  font-size: 16px;
+  font-size: 18px; /* Increased from 16px */
   color: #363636;
   margin: 0;
 }
@@ -43,9 +43,9 @@
 }
 
 .modal-content {
-  padding: 12px 15px; /* Reduced padding */
-  max-height: 350px; /* Limit the height */
-  overflow-y: auto; /* Add scroll if content is too long */
+  padding: 16px 20px; /* Increased from 12px 15px */
+  max-height: 600px; /* Increased from 450px to 600px for much more content space */
+  overflow-y: auto;
 }
 
 .detail-section {
@@ -66,13 +66,13 @@
 }
 
 .detail-label {
-  font-size: 12px; /* Further reduced font size */
+  font-size: 13px; /* Increased from 12px */
   color: rgba(54, 54, 54, 0.5);
-  margin-bottom: 4px; /* Reduced margin */
+  margin-bottom: 5px; /* Increased from 4px */
 }
 
 .detail-value {
-  font-size: 14px; /* Further reduced font size */
+  font-size: 15px; /* Increased from 14px */
   font-weight: 500;
   color: #363636;
 }
@@ -80,7 +80,7 @@
 .days-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px; /* Reduced gap */
+  gap: 8px; /* Increased from 5px */
 }
 
 .day-button {
@@ -88,10 +88,10 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 4px 7px; /* Reduced padding */
+  padding: 6px 10px; /* Increased from 4px 7px */
   border: 1px solid #d9d9d9;
-  border-radius: 6px; /* Reduced border radius */
-  font-size: 12px; /* Further reduced font size */
+  border-radius: 8px; /* Increased from 6px */
+  font-size: 13px; /* Increased from 12px */
   background: #ffffff;
 }
 
@@ -110,26 +110,25 @@
   color: #363636;
 }
 
-.status-section {
-  margin-bottom: 0; /* No margin for the last section */
-}
-
 .status-dropdown-container {
   position: relative;
 }
 
+/* Make the status dropdown more noticeable */
 .status-dropdown-button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 10px; /* Reduced padding */
+  padding: 10px 15px;
   background: #f9f9f9;
-  border-radius: 6px; /* Reduced border radius */
+  border-radius: 8px;
   cursor: pointer;
+  margin-top: 5px;
+  border: 1px solid #e0e0e0;
 }
 
 .status-text {
-  font-size: 14px; /* Further reduced font size */
+  font-size: 16px; /* Increased from 14px */
   font-weight: 500;
 }
 
@@ -167,30 +166,30 @@
 
 .modal-footer {
   display: flex;
-  padding: 12px 15px; /* Reduced padding */
+  padding: 16px 20px; /* Increased from 12px 15px */
   justify-content: space-between; /* Space between buttons */
   border-top: 1px solid #f0f0f0;
 }
 
 .edit-button,
 .cancel-button {
-  padding: 8px 12px; /* Reduced padding */
+  padding: 10px 16px; /* Increased from 8px 12px */
   background: #ffffff;
   border: 1px solid #d9d9d9;
-  border-radius: 6px; /* Reduced border radius */
+  border-radius: 8px; /* Increased from 6px */
   font-weight: 500;
-  font-size: 14px; /* Further reduced font size */
+  font-size: 15px; /* Increased from 14px */
   color: #363636;
   cursor: pointer;
 }
 
 .save-button {
-  padding: 8px 12px; /* Reduced padding */
+  padding: 10px 16px; /* Increased from 8px 12px */
   background: #a2f193;
   border: none;
-  border-radius: 6px; /* Reduced border radius */
+  border-radius: 8px; /* Increased from 6px */
   font-weight: 600;
-  font-size: 14px; /* Further reduced font size */
+  font-size: 15px; /* Increased from 14px */
   color: #137400;
   cursor: pointer;
 }
@@ -215,9 +214,18 @@
   width: 120px;
 }
 
+/* Modify the textarea style to make it smaller */
 .textarea {
   resize: vertical;
-  min-height: 60px;
+  min-height: 40px; /* Reduced from 60px */
+  max-height: 60px; /* Added max-height to limit expansion */
+}
+
+/* Add specific style for the address textarea */
+.edit-input.textarea {
+  min-height: 40px;
+  max-height: 60px;
+  font-size: 14px;
 }
 
 .day-button.editable {
@@ -270,4 +278,11 @@ button:disabled {
 
 .time-range-inputs span {
   margin: 0 5px;
+}
+
+/* Ensure the modal can be taller on larger screens */
+@media (min-height: 800px) {
+  .modal-content {
+    max-height: 650px;
+  }
 }

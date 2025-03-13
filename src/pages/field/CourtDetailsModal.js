@@ -4,7 +4,20 @@ import firebaseApp from "../../firebaseConfig"
 import Swal from "sweetalert2"
 import "./CourtDetailsModal.css"
 
+function useBodyScrollLock() {
+  useEffect(() => {
+    // Lock body scroll when component mounts
+    document.body.classList.add("modal-open")
+
+    // Unlock body scroll when component unmounts
+    return () => {
+      document.body.classList.remove("modal-open")
+    }
+  }, [])
+}
+
 function CourtDetailsModal({ court, onClose, onSave }) {
+  useBodyScrollLock()
   // State for court details
   const [status, setStatus] = useState(court.status || "Available")
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false)
@@ -50,22 +63,17 @@ function CourtDetailsModal({ court, onClose, onSave }) {
     try {
       setLoading(true)
       const db = getFirestore(firebaseApp)
-
       // Fetch court document
       const courtDocRef = doc(db, "Court", courtId)
       const courtDocSnap = await getDoc(courtDocRef)
-
       if (courtDocSnap.exists()) {
         const courtDocData = courtDocSnap.data()
-
         console.log("Fetched court data:", courtDocData) // Debug log
-
         setCourtData({
           id: courtId,
           ...courtDocData,
           court_id: courtDocData.court_id || courtId, // Ensure court_id is available
         })
-
         // Set available days from database or initialize with defaults
         const availableDays = courtDocData.availableDays || {
           Mon: true,
@@ -77,7 +85,6 @@ function CourtDetailsModal({ court, onClose, onSave }) {
           Sun: true,
         }
         setSelectedDays(availableDays)
-
         // Update editable fields
         setEditableFields({
           name: courtDocData.field || "",
@@ -254,7 +261,8 @@ function CourtDetailsModal({ court, onClose, onSave }) {
         bookingslot: Number(editableFields.bookingSlots),
         priceslot: Number(editableFields.priceslot),
         address: editableFields.address,
-        availableDays: selectedDays,
+        availableDays: selectedDays, // Add the full availableDays map to each timeslot
+
       }
 
       console.log("Updating court with data:", updateData) // Debug log
@@ -289,14 +297,12 @@ function CourtDetailsModal({ court, onClose, onSave }) {
         // If the timeslot has a day field, check if it's in the open days list
         // Otherwise, keep the current availability status
         const isAvailableDay = timeslotDay ? openDays.includes(timeslotDay) : timeslotData.available
-
         const updateData = {
           time_start: startTimestamp,
           time_end: endTimestamp,
           available: isAvailableDay,
           availableDays: selectedDays, // Add the full availableDays map to each timeslot
         }
-
         console.log("Updating timeslot:", timeslotDoc.id, updateData) // Debug log
         return updateDoc(timeslotRef, updateData)
       })
@@ -516,6 +522,28 @@ function CourtDetailsModal({ court, onClose, onSave }) {
                 )}
               </div>
 
+              <div className="detail-section">
+                <div className="detail-label">Status</div>
+                <div className="status-dropdown-container">
+                  <div className="status-dropdown-button" onClick={toggleStatusDropdown}>
+                    <span className={`status-text ${status.toLowerCase()}`}>{status}</span>
+                    <svg width="16" height="16" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M5.25 8.75L10.5 14L15.75 8.75" stroke="rgba(54, 54, 54, 0.5)" strokeWidth="2" />
+                    </svg>
+                  </div>
+                  {isStatusDropdownOpen && (
+                    <div className="status-dropdown-menu">
+                      <div className="status-option" onClick={() => handleStatusChange("Available")}>
+                        Available
+                      </div>
+                      <div className="status-option" onClick={() => handleStatusChange("Unavailable")}>
+                        Unavailable
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="detail-row">
                 <div className="detail-column">
                   <div className="detail-label">Court</div>
@@ -626,28 +654,6 @@ function CourtDetailsModal({ court, onClose, onSave }) {
                   />
                 </div>
               )}
-
-              <div className="detail-section status-section">
-                <div className="detail-label">Status</div>
-                <div className="status-dropdown-container">
-                  <div className="status-dropdown-button" onClick={toggleStatusDropdown}>
-                    <span className={`status-text ${status.toLowerCase()}`}>{status}</span>
-                    <svg width="16" height="16" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M5.25 8.75L10.5 14L15.75 8.75" stroke="rgba(54, 54, 54, 0.5)" strokeWidth="2" />
-                    </svg>
-                  </div>
-                  {isStatusDropdownOpen && (
-                    <div className="status-dropdown-menu">
-                      <div className="status-option" onClick={() => handleStatusChange("Available")}>
-                        Available
-                      </div>
-                      <div className="status-option" onClick={() => handleStatusChange("Unavailable")}>
-                        Unavailable
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
             </>
           )}
         </div>
