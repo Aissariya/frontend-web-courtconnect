@@ -113,9 +113,13 @@ const AverageBookingsChart = ({
         return;
       }
 
-      // 2. ดึงข้อมูลการจองทั้งหมด
+      // 2. ดึงข้อมูลการจองทั้งหมด - เพิ่มเงื่อนไข status เป็น successful
       const bookingsRef = collection(db, "Booking");
-      const bookingSnapshot = await getDocs(bookingsRef);
+      const bookingsQuery = query(
+        bookingsRef,
+        where('status', '==', 'successful') // เพิ่มเงื่อนไขกรองเฉพาะ status เป็น successful
+      );
+      const bookingSnapshot = await getDocs(bookingsQuery);
       console.log("จำนวน document ที่ดึงได้:", bookingSnapshot.size);
 
       const bookings = [];
