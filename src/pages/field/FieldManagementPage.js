@@ -192,15 +192,13 @@ function CourtManagement() {
   return (
     <>
       <div className="court-management">
-        <div className="filter-buttonkr">
+        <div className="filter-buttonkr" onClick={() => {}}>
           <svg width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M4.5 7.5H18.5" stroke="#363636" strokeWidth="2" strokeLinecap="round" />
             <path d="M6.5 11.5H16.5" stroke="#363636" strokeWidth="2" strokeLinecap="round" />
             <path d="M8.5 15.5H14.5" stroke="#363636" strokeWidth="2" strokeLinecap="round" />
           </svg>
-          <span>
-            <FilterButton onApplyFilters={handleApplyFilters} />
-          </span>
+          <FilterButton onApplyFilters={handleApplyFilters} />
         </div>
 
         {currentUser && (
@@ -367,46 +365,7 @@ function CourtManagement() {
           </div>
 
           <div className="paginationkr">
-            <div className="pagination-textkr">
-              Showing 1 to {filteredCourts.length} of {filteredCourts.length} entries
-            </div>
-            <div className="pagination-controlskr">
-              <svg
-                width="21"
-                height="21"
-                viewBox="0 0 21 21"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="chevron-left"
-              >
-                <path d="M13 16L7 10.5L13 5" stroke="rgba(54, 54, 54, 0.5)" strokeWidth="2" />
-              </svg>
-              <div className={`page-number ${selectedPage === 1 ? "active" : ""}`} onClick={() => setSelectedPage(1)}>
-                1
-              </div>
-              <div className={`page-number ${selectedPage === 2 ? "active" : ""}`} onClick={() => setSelectedPage(2)}>
-                2
-              </div>
-              <div className={`page-number ${selectedPage === 3 ? "active" : ""}`} onClick={() => setSelectedPage(3)}>
-                3
-              </div>
-              <div className={`page-number ${selectedPage === 4 ? "active" : ""}`} onClick={() => setSelectedPage(4)}>
-                4
-              </div>
-              <div className={`page-number ${selectedPage === 5 ? "active" : ""}`} onClick={() => setSelectedPage(5)}>
-                5
-              </div>
-              <svg
-                width="21"
-                height="21"
-                viewBox="0 0 21 21"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="chevron-right"
-              >
-                <path d="M8 5L14 10.5L8 16" stroke="#363636" strokeWidth="2" />
-              </svg>
-            </div>
+            <div className="pagination-textkr">Showing all {filteredCourts.length} entries</div>
           </div>
         </div>
 
