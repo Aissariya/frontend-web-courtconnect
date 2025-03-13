@@ -27,13 +27,13 @@ function CourtDetailsModal({ court, onClose, onSave }) {
   const allDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
   const [selectedDays, setSelectedDays] = useState(
     court.availableDays || {
-      Mon: false,
-      Tue: false,
-      Wed: false,
-      Thu: false,
-      Fri: false,
-      Sat: false,
-      Sun: false,
+      Mon: true,
+      Tue: true,
+      Wed: true,
+      Thu: true,
+      Fri: true,
+      Sat: true,
+      Sun: true,
     },
   )
 
@@ -68,13 +68,13 @@ function CourtDetailsModal({ court, onClose, onSave }) {
 
         // Set available days from database or initialize with defaults
         const availableDays = courtDocData.availableDays || {
-          Mon: false,
-          Tue: false,
-          Wed: false,
-          Thu: false,
-          Fri: false,
-          Sat: false,
-          Sun: false,
+          Mon: true,
+          Tue: true,
+          Wed: true,
+          Thu: true,
+          Fri: true,
+          Sat: true,
+          Sun: true,
         }
         setSelectedDays(availableDays)
 

@@ -21,11 +21,11 @@ body {
   display: flex;
   flex-direction: row;
   align-items: center;
-
   padding: 10px 15px;
-  gap: 20px;
+  gap: 10px;
   position: absolute;
-  width: 122px;
+  width: auto;
+  min-width: 122px;
   height: 44px;
   left: 140px;
   top: 147px;
@@ -35,13 +35,16 @@ body {
   background-color: #fff;
 }
 
+.filter-buttonkr svg {
+  width: 23px;
+  height: 23px;
+}
+
 .filter-buttonkr span {
-  width: 49px;
-  height: 24px;
   font-style: normal;
   font-weight: 500;
-  font-size: 16px; /* Reduced from 20px */
-  line-height: 20px; /* Adjusted line height */
+  font-size: 16px;
+  line-height: 20px;
   color: #363636;
 }
 
@@ -76,13 +79,15 @@ body {
   position: absolute;
   width: calc(100% - 82px);
   max-width: 1647px;
-  height: 794px;
+  min-height: 794px;
+  height: auto;
   left: 41px;
   top: 256px;
   background: #ffffff;
   border-radius: 15px;
   padding: 30px;
-  overflow: hidden;
+  padding-bottom: 80px;
+  overflow: visible;
 }
 
 .header-sectionkr {
@@ -181,8 +186,9 @@ body {
 
 .table-containerkr {
   width: 100%;
-  height: calc(100% - 150px);
-  overflow-y: auto;
+  height: auto;
+  min-height: 400px;
+  overflow: visible;
 }
 
 .table-header {
@@ -350,13 +356,11 @@ body {
 
 .paginationkr {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  width: calc(100% - 60px);
-  position: absolute;
-  bottom: 30px;
-  left: 30px;
-  right: 30px;
+  width: 100%;
+  position: relative;
+  margin-top: 30px;
 }
 
 .pagination-textkr {
@@ -440,6 +444,13 @@ body {
     width: 100%;
     justify-content: center;
   }
+
+  .filter-buttonkr {
+    position: relative;
+    left: 0;
+    top: 0;
+    margin-bottom: 20px;
+  }
 }
 
 .header-cell:last-child {
@@ -484,4 +495,3 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
 }
-
