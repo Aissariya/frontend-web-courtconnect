@@ -151,10 +151,11 @@ const useRevenueData = (user, selectedMonth, selectedYear, filterPeriod = 'month
           return;
         }
         
-        // 2. ดึงข้อมูลการจองทั้งหมด (ทุกช่วงเวลา)
+        // 2. ดึงข้อมูลการจองทั้งหมด (ทุกช่วงเวลา) - เพิ่มเงื่อนไข status เป็น successful
         const bookingsRef = collection(db, 'Booking');
         const bookingsQuery = query(
           bookingsRef,
+          where('status', '==', 'successful'), // เพิ่มเงื่อนไขกรองเฉพาะ status เป็น successful
           orderBy('start_time', 'asc')
         );
         
