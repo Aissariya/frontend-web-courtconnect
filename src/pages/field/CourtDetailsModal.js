@@ -561,7 +561,7 @@ function CourtDetailsModal({ court, onClose, onSave }) {
                       <option value="Ping Pong">Ping Pong</option>
                       <option value="Swimming">Swimming</option>
                       <option value="Boxing">Boxing</option>
-                      <option value="Aerobics">Aerobics</option>
+                      <option value="Aerobic">Aerobic</option>
                     </select>
                   ) : (
                     <div className="detail-value">{editableFields.type}</div>
