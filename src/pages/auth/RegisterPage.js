@@ -103,32 +103,30 @@ const Register = () => {
     }
   };
 
-// Function to generate next wallet ID
-const generateNextWalletId = async () => {
-  try {
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, orderBy("wallet_id", "desc"), limit(1));
-    const querySnapshot = await getDocs(q);
+  // Function to generate next wallet ID
+  const generateNextWalletId = async () => {
+    try {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, orderBy("wallet_id", "desc"), limit(1));
+      const querySnapshot = await getDocs(q);
 
-    let nextWalletId = "w001"; // ค่าเริ่มต้น
+      let nextWalletId = "w001"; // ค่าเริ่มต้น
 
-    if (!querySnapshot.empty) {
-      const latestUser = querySnapshot.docs[0].data();
-      const latestWalletId = latestUser.wallet_id;
+      if (!querySnapshot.empty) {
+        const latestUser = querySnapshot.docs[0].data();
+        const latestWalletId = latestUser.wallet_id;
 
-      // แปลงตัวเลขท้าย wallet_id แล้วเพิ่มค่า +1
-      const num = parseInt(latestWalletId.substring(1)) + 1;
-      nextWalletId = `w${num.toString().padStart(3, "0")}`;
+        // แปลงตัวเลขท้าย wallet_id แล้วเพิ่มค่า +1
+        const num = parseInt(latestWalletId.substring(1)) + 1;
+        nextWalletId = `w${num.toString().padStart(3, "0")}`;
+      }
+
+      return nextWalletId;
+    } catch (error) {
+      console.error("Error generating wallet ID:", error);
+      throw error;
     }
-
-    return nextWalletId;
-  } catch (error) {
-    console.error("Error generating wallet ID:", error);
-    throw error;
-  }
-};
-
-
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -136,19 +134,35 @@ const generateNextWalletId = async () => {
 
     setLoading(true);
     try {
-      // Generate next user ID
+      // Generate next user ID and wallet ID
       const nextUserId = await generateNextUserId();
       const nextWalletId = await generateNextWalletId();
+      
+      // Create user authentication
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
+      // Current timestamp
+      const currentTimestamp = new Date();
+
+      // Create user document
       await setDoc(doc(db, "users", user.uid), {
         user_id: nextUserId,
         wallet_id: nextWalletId,
         name: formData.name,
         surname: formData.surname,
         email: formData.email,
-        createdAt: new Date(),
+        createdAt: currentTimestamp,
+      });
+
+      // Create wallet document
+      await setDoc(doc(db, "Wallet", nextWalletId), {
+        amount: 0,
+        balance: 0,
+        create_at: currentTimestamp,
+        status: "",
+        user_id: nextUserId,
+        wallet_id: nextWalletId
       });
 
       Swal.fire({

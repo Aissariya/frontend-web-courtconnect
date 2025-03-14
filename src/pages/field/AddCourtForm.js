@@ -11,11 +11,6 @@ import { getAuth } from 'firebase/auth';
 function AddCourtForm({ onBack }) {
   // Sample existing fields for the dropdown
   const existingFields = [
-    "Alpha Court TH",
-    "Beta Court TH",
-    "Gamma Court TH",
-    "Lion Singto",
-    "Football Club"
   ];
   const { user } = useAuth();
   const [userId, setUserId] = useState(null);
@@ -77,7 +72,7 @@ function AddCourtForm({ onBack }) {
     const urls = [];
     for (let i = 0; i < images.length; i++) {
       const image = images[i];
-      const imageRef = ref(storage, `court_images/${Date.now()}_${image.name}`);
+      const imageRef = ref(storage, `ImageCourt/${Date.now()}_${image.name}`);
       await uploadBytes(imageRef, image);
       const downloadURL = await getDownloadURL(imageRef);
       urls.push(downloadURL);
@@ -178,8 +173,6 @@ function AddCourtForm({ onBack }) {
     }
     const bookingSlotMap = {
       'Hourly': 60,
-      '2 hours': 120,
-      '30 minutes': 30
     };
     if (formData.startTime === '' || formData.endTime === '') {
       Swal.fire({ title: 'Error!', text: 'Please select start and end time.', icon: 'error' });
@@ -228,6 +221,9 @@ function AddCourtForm({ onBack }) {
         image: imageURLs
       });
 
+      // ตรวจสอบค่าก่อนแปลง
+      console.log("Form Data - Available Days:", formData.availableDays);
+
       // แปลงวันที่ให้เป็น boolean
       const availableDays = {
         Mon: formData.availableDays.Mon || false,
@@ -238,14 +234,16 @@ function AddCourtForm({ onBack }) {
         Sat: formData.availableDays.Sat || false,
         Sun: formData.availableDays.Sun || false
       };
+      console.log("Converted Available Days:", availableDays);
 
-      await addDoc(collection(db, "Timeslot"), {
+      const timeslotRef = await addDoc(collection(db, "Timeslot"), {
         available: Boolean(true),
         court_id: courtId,
         availableDays: availableDays,
         time_start: startTimestamp,
         time_end: endTimestamp
       });
+      console.log("Timeslot added with ID: ", timeslotRef.id);
       Swal.fire({
         title: 'Success!',
         text: 'Court has been added successfully',
@@ -302,11 +300,11 @@ function AddCourtForm({ onBack }) {
                 value={formData.isNewField ? 'new' : formData.name}
                 onChange={handleNameChange}
               >
-                <option value="">Please select a field</option>
+                <option value="">Please Create a New Field</option>
                 {existingFields.map((field, index) => (
                   <option key={index} value={field}>{field}</option>
                 ))}
-                <option value="new">Or create new field</option>
+                <option value="new">Create New Field</option>
               </select>
               <div className="lucide-chevron-down-dropdown">
                 <svg width="16" height="16" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -369,7 +367,7 @@ function AddCourtForm({ onBack }) {
                 <option value="Basketball">Basketball</option>
                 <option value="Tennis">Tennis</option>
                 <option value="Badminton">Badminton</option>
-                <option value="Swim">Swim</option>
+                <option value="Swimming">Swimming</option>
                 <option value="Yoga">Yoga</option>
                 <option value="Ping Pong">Ping Pong</option>
                 <option value="Boxing">Boxing</option>
@@ -510,10 +508,8 @@ function AddCourtForm({ onBack }) {
                     value={formData.bookingSlots}
                     onChange={handleInputChange}
                   >
-                    <option value="">Hourly</option>
+                    <option value="">Select booking Slot</option>
                     <option value="Hourly">Hourly</option>
-                    <option value="30 minutes">30 minutes</option>
-                    <option value="2 hours">2 hours</option>
                   </select>
                   <div className="lucide-chevron-down-dropdown">
                     <svg width="16" height="16" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -547,9 +543,9 @@ function AddCourtForm({ onBack }) {
             <span className="media-text">Picture</span>
           </div>
           
-          <div className="text-normal upload-label">
+          {/* <div className="text-normal upload-label">
             <span className="regular">(Up to 7 pictures)</span>
-          </div>
+          </div> */}
           
           <div className="image">
             <div className="rectangle-152">
