@@ -160,7 +160,7 @@ const Register = () => {
         amount: 0,
         balance: 0,
         create_at: currentTimestamp,
-        status: "",
+        status: "tranfer_in",
         user_id: nextUserId,
         wallet_id: nextWalletId
       });
