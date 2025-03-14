@@ -245,6 +245,23 @@ function CourtManagement() {
         )}
 
         <div className="main-containerkr">
+          {currentUser && (
+            <div className="selection-dropdown status-top-right" ref={statusDropdownRef}>
+              <button onClick={toggleStatusDropdown} className="status-button">
+                <span>Status</span>
+                <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5.25 8.75L10.5 14L15.75 8.75" stroke="rgba(54, 54, 54, 0.5)" strokeWidth="2" />
+                </svg>
+              </button>
+              {isStatusDropdownOpen && (
+                <div className="status-dropdown">
+                  <button onClick={() => handleStatusFilter("Available")}>Available</button>
+                  <button onClick={() => handleStatusFilter("Unavailable")}>Unavailable</button>
+                  {statusFilter && <button onClick={() => handleStatusFilter(null)}>Clear Filter</button>}
+                </div>
+              )}
+            </div>
+          )}
           <div className="header-section">
             <div className="topic-card">
               <div className="icon-container">
@@ -273,24 +290,6 @@ function CourtManagement() {
               </div>
               <span className="topic-text">{currentUser ? `${currentUser.name}'s Courts` : "My Courts"}</span>
             </div>
-
-            {currentUser && (
-              <div className="selection-dropdown" ref={statusDropdownRef}>
-                <button onClick={toggleStatusDropdown} className="status-button">
-                  <span>Status</span>
-                  <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M5.25 8.75L10.5 14L15.75 8.75" stroke="rgba(54, 54, 54, 0.5)" strokeWidth="2" />
-                  </svg>
-                </button>
-                {isStatusDropdownOpen && (
-                  <div className="status-dropdown">
-                    <button onClick={() => handleStatusFilter("Available")}>Available</button>
-                    <button onClick={() => handleStatusFilter("Unavailable")}>Unavailable</button>
-                    {statusFilter && <button onClick={() => handleStatusFilter(null)}>Clear Filter</button>}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           <div className="table-container">
@@ -414,4 +413,3 @@ function CourtManagement() {
 }
 
 export default CourtManagement
-
